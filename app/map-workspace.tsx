@@ -371,8 +371,8 @@ export function MapWorkspace() {
           <section className="map-legend" aria-label="地圖圖例">
             <h2>{selection.mode === 'partisan' ? '藍綠優勢分布' : selection.mode === 'green-rate' ? '綠營相對得票率中位數' : '藍營相對得票率中位數'}</h2>
             {selection.mode === 'partisan' ? <div className="partisan-legend">
-              <p className="legend-description">每格 5 個百分點；負值為藍營領先，正值為綠營領先。</p>
-              <div className="partisan-ramp" aria-label="藍綠差距每 5 個百分點色階">
+              <p className="legend-description">每格 10 個百分點；負值為藍營領先，正值為綠營領先。</p>
+              <div className="partisan-ramp" aria-label="藍綠差距每 10 個百分點色階">
                 {PARTISAN_LEGEND_SCORES.map((score) => <span key={score} style={{ background: partisanScaleColor(score) }} />)}
               </div>
               <div className="partisan-ticks"><span>≤−50</span><span>−25</span><span>0</span><span>+25</span><span>≥+50</span></div>
