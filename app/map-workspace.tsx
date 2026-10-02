@@ -109,7 +109,7 @@ function tooltipContent(properties: LiProperties) {
   const coverage = properties.elections_count === 7
     ? '七屆完整中位數'
     : `${properties.elections_count} 屆可用資料中位數（${properties.years_included.replaceAll('|', '、')}）`;
-  return `<div class="li-tooltip"><p>${properties.district}</p><h3>${properties.li_name_2022}</h3><small class="tooltip-coverage">${coverage}</small><dl><dt>藍綠差距中位數</dt><dd>${formatScore(properties.median_score)}</dd><dt>綠營相對得票率中位數</dt><dd>${formatPercent(properties.green_median_share)}</dd><dt>藍營相對得票率中位數</dt><dd>${formatPercent(properties.blue_median_share)}</dd><dt>分類</dt><dd>${properties.classification}</dd></dl><div class="tooltip-years">${yearScores}</div>${properties.mapping_status !== 'matched' ? `<strong class="tooltip-warning">里界對應警示：${properties.mapping_status}</strong>` : ''}</div>`;
+  return `<div class="li-tooltip"><button type="button" class="li-tooltip-close" aria-label="關閉里別詳細資料">&times;</button><p>${properties.district}</p><h3>${properties.li_name_2022}</h3><small class="tooltip-coverage">${coverage}</small><dl><dt>藍綠差距中位數</dt><dd>${formatScore(properties.median_score)}</dd><dt>綠營相對得票率中位數</dt><dd>${formatPercent(properties.green_median_share)}</dd><dt>藍營相對得票率中位數</dt><dd>${formatPercent(properties.blue_median_share)}</dd><dt>分類</dt><dd>${properties.classification}</dd></dl><div class="tooltip-years">${yearScores}</div>${properties.mapping_status !== 'matched' ? `<strong class="tooltip-warning">里界對應警示：${properties.mapping_status}</strong>` : ''}</div>`;
 }
 
 function installPendingPattern(map: LeafletMap) {
@@ -292,6 +292,21 @@ export function MapWorkspace() {
       observer.disconnect();
       if (animationFrame !== null) cancelAnimationFrame(animationFrame);
     };
+  }, [mapReady]);
+
+  useEffect(() => {
+    const node = mapNode.current;
+    if (!mapReady || !node) return;
+    const closeVillageDetail = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest('.li-tooltip-close')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      villageLayerRef.current?.closeTooltip();
+      dispatch({ type: 'select-village', village: ALL_VILLAGES });
+    };
+    node.addEventListener('click', closeVillageDetail, true);
+    return () => node.removeEventListener('click', closeVillageDetail, true);
   }, [mapReady]);
 
   useEffect(() => {

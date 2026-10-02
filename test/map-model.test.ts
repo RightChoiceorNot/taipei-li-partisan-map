@@ -62,6 +62,14 @@ void test('選定里後會產生里範圍縮放目標與醒目描邊', () => {
   assert.equal(featureEmphasis({ district: '信義區', li_name_2022: '西村里' }, state).fillOpacity, 0.16);
 });
 
+void test('關閉里別詳細資料後保留行政區並回到該區全部里', () => {
+  let state = selectionReducer(INITIAL_SELECTION, { type: 'select-feature', district: '士林區', village: '溪山里' });
+  state = selectionReducer(state, { type: 'select-village', village: ALL_VILLAGES });
+  assert.equal(state.district, '士林區');
+  assert.equal(state.village, ALL_VILLAGES);
+  assert.deepEqual(focusTarget(state), { scope: 'district', district: '士林區' });
+});
+
 void test('切換三種地圖模式保留行政區與里別狀態', () => {
   let state = selectionReducer(INITIAL_SELECTION, { type: 'select-feature', district: '松山區', village: '莊敬里' });
   const focusKey = selectionFocusKey(state);
