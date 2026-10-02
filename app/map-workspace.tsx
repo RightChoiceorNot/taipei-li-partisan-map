@@ -78,6 +78,22 @@ const MODES: { value: MapMode; label: string }[] = [
   { value: 'blue-rate', label: '藍營相對得票率' },
 ];
 
+async function fetchJsonWithRetry<T>(url: string, label: string, retries = 2): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json() as T;
+    } catch (error) {
+      lastError = error;
+      if (attempt < retries) await new Promise((resolve) => window.setTimeout(resolve, 700 * (attempt + 1)));
+    }
+  }
+  const reason = lastError instanceof Error ? lastError.message : '未知錯誤';
+  throw new Error(`${label}（${reason}）`);
+}
+
 function formatScore(value: number | null | undefined) {
   if (value === null || value === undefined || Number.isNaN(value)) return '尚無可靠資料';
   return `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
@@ -126,6 +142,7 @@ export function MapWorkspace() {
   const villageLayerRef = useRef<LeafletGeoJSON | null>(null);
   const districtLayersRef = useRef<Layer[]>([]);
   const districtLabelsRef = useRef<LayerGroup | null>(null);
+  const loadRequestRef = useRef(0);
   const pickerDragRef = useRef({ pointerId: -1, startY: 0, startScrollTop: 0, moved: false });
   const [mapReady, setMapReady] = useState(false);
   const [data, setData] = useState<LiCollection | null>(null);
@@ -133,6 +150,8 @@ export function MapWorkspace() {
   const [scoreRows, setScoreRows] = useState<LiProperties[]>([]);
   const [directory, setDirectory] = useState<VillageDirectoryRow[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [isDetailCollapsed, setIsDetailCollapsed] = useState(false);
   const [mobilePicker, setMobilePicker] = useState<'district' | 'village' | null>(null);
   const [selection, dispatch] = useReducer(selectionReducer, INITIAL_SELECTION);
@@ -141,33 +160,39 @@ export function MapWorkspace() {
   const mapFocusKey = selectionFocusKey(selection);
 
   useEffect(() => {
-    const dataUrl = (filename: string) => `${import.meta.env.BASE_URL}data/${filename}`;
-    Promise.all([
-      fetch(dataUrl('taipei_li_partisan.geojson')).then((response) => {
-        if (!response.ok) throw new Error(`GeoJSON HTTP ${response.status}`);
-        return response.json() as Promise<LiCollection>;
-      }),
-      fetch(dataUrl('taipei_district_boundaries.geojson')).then((response) => {
-        if (!response.ok) throw new Error(`District GeoJSON HTTP ${response.status}`);
-        return response.json() as Promise<DistrictCollection>;
-      }),
-      fetch(dataUrl('li_partisan_scores.json')).then((response) => {
-        if (!response.ok) throw new Error(`Scores HTTP ${response.status}`);
-        return response.json() as Promise<ScoreCollection>;
-      }),
-      fetch(dataUrl('li_directory_2022.json')).then((response) => {
-        if (!response.ok) throw new Error(`Li directory HTTP ${response.status}`);
-        return response.json() as Promise<DirectoryCollection>;
-      }),
-    ])
-      .then(([geojson, districts, scores, liDirectory]) => {
-        setData(geojson);
-        setDistrictData(districts);
+    const requestId = loadRequestRef.current + 1;
+    loadRequestRef.current = requestId;
+    const dataVersion = import.meta.env.VITE_DATA_VERSION || 'local';
+    const dataUrl = (filename: string) => `${import.meta.env.BASE_URL}data/${filename}?v=${encodeURIComponent(dataVersion)}`;
+    setLoadError(null);
+    setIsLoading(true);
+
+    void (async () => {
+      try {
+        const [scores, liDirectory] = await Promise.all([
+          fetchJsonWithRetry<ScoreCollection>(dataUrl('li_partisan_scores.json'), '計分資料'),
+          fetchJsonWithRetry<DirectoryCollection>(dataUrl('li_directory_2022.json'), '里別目錄'),
+        ]);
+        if (loadRequestRef.current !== requestId) return;
         setScoreRows(scores.rows);
         setDirectory(liDirectory.rows);
-      })
-      .catch(() => setLoadError('無法讀取本機地圖資料，請先執行 npm run data:normalize-election 與 npm run data:build。'));
-  }, []);
+
+        const geojson = await fetchJsonWithRetry<LiCollection>(dataUrl('taipei_li_partisan.geojson'), '里界資料');
+        if (loadRequestRef.current !== requestId) return;
+        setData(geojson);
+
+        const districts = await fetchJsonWithRetry<DistrictCollection>(dataUrl('taipei_district_boundaries.geojson'), '行政區邊界');
+        if (loadRequestRef.current !== requestId) return;
+        setDistrictData(districts);
+      } catch (error) {
+        if (loadRequestRef.current !== requestId) return;
+        const reason = error instanceof Error ? error.message : '未知錯誤';
+        setLoadError(`手機網路或網站快取暫時無法取得地圖資料：${reason}。請確認網路後重新載入。`);
+      } finally {
+        if (loadRequestRef.current === requestId) setIsLoading(false);
+      }
+    })();
+  }, [loadAttempt]);
 
   const districts = useMemo(() => [
     ALL_DISTRICTS,
@@ -451,7 +476,7 @@ export function MapWorkspace() {
               {MODES.map((mode) => <button key={mode.value} type="button" aria-pressed={selection.mode === mode.value} onClick={() => dispatch({ type: 'set-mode', mode: mode.value })}>{mode.label}</button>)}
             </div>
           </fieldset>
-          {blocker && <Alert className="map-alert"><AlertTriangle /><AlertTitle>地圖資料無法載入</AlertTitle><AlertDescription>{blocker}</AlertDescription></Alert>}
+          {blocker && <Alert className="map-alert"><AlertTriangle /><AlertTitle>地圖資料暫時無法載入</AlertTitle><AlertDescription><p>{blocker}</p>{loadError && <button className="map-retry-button" type="button" disabled={isLoading} onClick={() => setLoadAttempt((attempt) => attempt + 1)}>{isLoading ? '重新載入中…' : '重新載入地圖'}</button>}</AlertDescription></Alert>}
           <section className="map-legend" aria-label="地圖圖例">
             <h2>{selection.mode === 'partisan' ? '藍綠優勢分布' : selection.mode === 'green-rate' ? '綠營相對得票率' : '藍營相對得票率'}</h2>
             {selection.mode === 'partisan' ? <div className="partisan-legend">
