@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { GeoJSON as LeafletGeoJSON, Layer, LayerGroup, Map as LeafletMap } from 'leaflet';
-import { AlertTriangle, Database, Info, MapPinned, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Database, Info, MapPinned, PanelRightClose, PanelRightOpen, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import {
@@ -126,6 +126,7 @@ export function MapWorkspace() {
   const villageLayerRef = useRef<LeafletGeoJSON | null>(null);
   const districtLayersRef = useRef<Layer[]>([]);
   const districtLabelsRef = useRef<LayerGroup | null>(null);
+  const pickerDragRef = useRef({ pointerId: -1, startY: 0, startScrollTop: 0, moved: false });
   const [mapReady, setMapReady] = useState(false);
   const [data, setData] = useState<LiCollection | null>(null);
   const [districtData, setDistrictData] = useState<DistrictCollection | null>(null);
@@ -133,6 +134,7 @@ export function MapWorkspace() {
   const [directory, setDirectory] = useState<VillageDirectoryRow[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isDetailCollapsed, setIsDetailCollapsed] = useState(false);
+  const [mobilePicker, setMobilePicker] = useState<'district' | 'village' | null>(null);
   const [selection, dispatch] = useReducer(selectionReducer, INITIAL_SELECTION);
   const selectedDistrict = selection.district;
   const selectedVillage = selection.village;
@@ -172,6 +174,32 @@ export function MapWorkspace() {
     ...Array.from(new Set(directory.map((row) => row.district))).filter(Boolean).sort((a, b) => a.localeCompare(b, 'zh-Hant')),
   ], [directory]);
   const villages = useMemo(() => villageOptions(directory, selection.district), [directory, selection.district]);
+  const mobilePickerOptions = mobilePicker === 'district' ? districts : [ALL_VILLAGES, ...villages];
+  const mobilePickerValue = mobilePicker === 'district' ? selection.district : selection.village;
+
+  const startPickerDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'mouse' || event.button !== 0) return;
+    const list = event.currentTarget;
+    pickerDragRef.current = { pointerId: event.pointerId, startY: event.clientY, startScrollTop: list.scrollTop, moved: false };
+    list.dataset.dragging = 'true';
+    list.setPointerCapture(event.pointerId);
+  };
+
+  const movePickerDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = pickerDragRef.current;
+    if (event.pointerId !== drag.pointerId) return;
+    const distance = event.clientY - drag.startY;
+    if (Math.abs(distance) > 3) drag.moved = true;
+    event.currentTarget.scrollTop = drag.startScrollTop - distance;
+    if (drag.moved) event.preventDefault();
+  };
+
+  const finishPickerDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerId !== pickerDragRef.current.pointerId) return;
+    event.currentTarget.dataset.dragging = 'false';
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    pickerDragRef.current.pointerId = -1;
+  };
   const filteredScores = useMemo(() => scoreRows.filter((row) =>
     (selection.district === ALL_DISTRICTS || row.district === selection.district)
     && (selection.village === VILLAGE_PROMPT || selection.village === ALL_VILLAGES || row.li_name_2022 === selection.village),
@@ -185,6 +213,20 @@ export function MapWorkspace() {
   ) ?? data?.features.find((feature) =>
     feature.properties.district === selection.district && feature.properties.li_name_2022 === selection.village,
   )?.properties ?? null, [data, scoreRows, selection.district, selection.village]);
+
+  useEffect(() => {
+    if (!mobilePicker) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobilePicker(null);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [mobilePicker]);
 
   useEffect(() => {
     if (!mapNode.current || mapRef.current) return;
@@ -211,6 +253,21 @@ export function MapWorkspace() {
       mapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const node = mapNode.current;
+    if (!mapReady || !node || typeof ResizeObserver === 'undefined') return;
+    let animationFrame: number | null = null;
+    const observer = new ResizeObserver(() => {
+      if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+      animationFrame = requestAnimationFrame(() => mapRef.current?.invalidateSize({ pan: false }));
+    });
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+    };
+  }, [mapReady]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !data) return;
@@ -340,16 +397,43 @@ export function MapWorkspace() {
           </div>
           <div className="panel-section controls">
             <div className="control-heading"><p>探索地圖</p><span>選擇行政區與里別</span></div>
-            <label htmlFor="district-filter">行政區</label>
-            <Select value={selection.district} onValueChange={(value) => dispatch({ type: 'select-district', district: value ?? ALL_DISTRICTS })}>
-              <SelectTrigger id="district-filter" className="filter-control"><SelectValue /></SelectTrigger>
-              <SelectContent>{districts.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
-            </Select>
-            <label htmlFor="village-filter">里別</label>
-            <Select disabled={selection.district === ALL_DISTRICTS} value={selection.village} onValueChange={(value) => dispatch({ type: 'select-village', village: value ?? ALL_VILLAGES })}>
-              <SelectTrigger id="village-filter" className="filter-control"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value={ALL_VILLAGES}>{ALL_VILLAGES}</SelectItem>{villages.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
-            </Select>
+            <label className="desktop-filter-label" htmlFor="district-filter">行政區</label>
+            <span id="district-filter-label" className="mobile-filter-label">行政區</span>
+            <div className="desktop-filter">
+              <Select value={selection.district} onValueChange={(value) => dispatch({ type: 'select-district', district: value ?? ALL_DISTRICTS })}>
+                <SelectTrigger id="district-filter" className="filter-control"><SelectValue /></SelectTrigger>
+                <SelectContent>{districts.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <button
+              className="mobile-sheet-trigger mobile-filter"
+              type="button"
+              aria-labelledby="district-filter-label district-filter-mobile-value"
+              aria-haspopup="dialog"
+              aria-expanded={mobilePicker === 'district'}
+              onClick={() => setMobilePicker('district')}
+            >
+              <span id="district-filter-mobile-value">{selection.district}</span><ChevronDown size={18} aria-hidden="true" />
+            </button>
+            <label className="desktop-filter-label" htmlFor="village-filter">里別</label>
+            <span id="village-filter-label" className="mobile-filter-label">里別</span>
+            <div className="desktop-filter">
+              <Select disabled={selection.district === ALL_DISTRICTS} value={selection.village} onValueChange={(value) => dispatch({ type: 'select-village', village: value ?? ALL_VILLAGES })}>
+                <SelectTrigger id="village-filter" className="filter-control"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value={ALL_VILLAGES}>{ALL_VILLAGES}</SelectItem>{villages.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <button
+              className="mobile-sheet-trigger mobile-filter"
+              type="button"
+              aria-labelledby="village-filter-label village-filter-mobile-value"
+              aria-haspopup="dialog"
+              aria-expanded={mobilePicker === 'village'}
+              disabled={selection.district === ALL_DISTRICTS}
+              onClick={() => setMobilePicker('village')}
+            >
+              <span id="village-filter-mobile-value">{selection.district === ALL_DISTRICTS ? VILLAGE_PROMPT : selection.village}</span><ChevronDown size={18} aria-hidden="true" />
+            </button>
           </div>
           <div className="panel-section methodology-note">
             <p>432 里取七屆中位數；23 個後期新增里與 1 個合併改設里，僅取 3 或 5 屆實際票數中位數。</p>
@@ -369,9 +453,8 @@ export function MapWorkspace() {
           </fieldset>
           {blocker && <Alert className="map-alert"><AlertTriangle /><AlertTitle>地圖資料無法載入</AlertTitle><AlertDescription>{blocker}</AlertDescription></Alert>}
           <section className="map-legend" aria-label="地圖圖例">
-            <h2>{selection.mode === 'partisan' ? '藍綠優勢分布' : selection.mode === 'green-rate' ? '綠營相對得票率中位數' : '藍營相對得票率中位數'}</h2>
+            <h2>{selection.mode === 'partisan' ? '藍綠優勢分布' : selection.mode === 'green-rate' ? '綠營相對得票率' : '藍營相對得票率'}</h2>
             {selection.mode === 'partisan' ? <div className="partisan-legend">
-              <p className="legend-description">±5 為中立；兩側依 5–10、10–20、20–30、30–40、40 以上分五級。</p>
               <div className="partisan-ramp" aria-label="藍綠差距五級色階">
                 {PARTISAN_LEGEND_SCORES.map((score) => <span key={score} style={{ background: partisanScaleColor(score) }} />)}
               </div>
@@ -412,6 +495,48 @@ export function MapWorkspace() {
           </aside>
         </div>
       </section>
+      {mobilePicker && <div className="mobile-picker-layer">
+        <button className="mobile-picker-backdrop" type="button" aria-label="關閉選單" onClick={() => setMobilePicker(null)} />
+        <section className="mobile-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="mobile-picker-title">
+          <div className="mobile-picker-handle" aria-hidden="true" />
+          <header>
+            <h2 id="mobile-picker-title">選擇{mobilePicker === 'district' ? '行政區' : '里別'}</h2>
+            <button type="button" aria-label="關閉選單" onClick={() => setMobilePicker(null)}><X size={21} aria-hidden="true" /></button>
+          </header>
+          <div
+            className="mobile-picker-options"
+            role="listbox"
+            aria-label={mobilePicker === 'district' ? '行政區' : '里別'}
+            onPointerDown={startPickerDrag}
+            onPointerMove={movePickerDrag}
+            onPointerUp={finishPickerDrag}
+            onPointerCancel={finishPickerDrag}
+            onClickCapture={(event) => {
+              if (!pickerDragRef.current.moved) return;
+              event.preventDefault();
+              event.stopPropagation();
+              pickerDragRef.current.moved = false;
+            }}
+          >
+            {mobilePickerOptions.map((name) => {
+              const isSelected = name === mobilePickerValue;
+              return <button
+                key={name}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                onClick={() => {
+                  if (mobilePicker === 'district') dispatch({ type: 'select-district', district: name });
+                  else dispatch({ type: 'select-village', village: name });
+                  setMobilePicker(null);
+                }}
+              >
+                <span>{name}</span>{isSelected && <Check size={20} aria-hidden="true" />}
+              </button>;
+            })}
+          </div>
+        </section>
+      </div>}
     </main>
   );
 }
