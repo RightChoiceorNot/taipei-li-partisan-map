@@ -137,20 +137,21 @@ export function MapWorkspace() {
   const mapFocusKey = selectionFocusKey(selection);
 
   useEffect(() => {
+    const dataUrl = (filename: string) => `${import.meta.env.BASE_URL}data/${filename}`;
     Promise.all([
-      fetch('/data/taipei_li_partisan.geojson').then((response) => {
+      fetch(dataUrl('taipei_li_partisan.geojson')).then((response) => {
         if (!response.ok) throw new Error(`GeoJSON HTTP ${response.status}`);
         return response.json() as Promise<LiCollection>;
       }),
-      fetch('/data/taipei_district_boundaries.geojson').then((response) => {
+      fetch(dataUrl('taipei_district_boundaries.geojson')).then((response) => {
         if (!response.ok) throw new Error(`District GeoJSON HTTP ${response.status}`);
         return response.json() as Promise<DistrictCollection>;
       }),
-      fetch('/data/li_partisan_scores.json').then((response) => {
+      fetch(dataUrl('li_partisan_scores.json')).then((response) => {
         if (!response.ok) throw new Error(`Scores HTTP ${response.status}`);
         return response.json() as Promise<ScoreCollection>;
       }),
-      fetch('/data/li_directory_2022.json').then((response) => {
+      fetch(dataUrl('li_directory_2022.json')).then((response) => {
         if (!response.ok) throw new Error(`Li directory HTTP ${response.status}`);
         return response.json() as Promise<DirectoryCollection>;
       }),
