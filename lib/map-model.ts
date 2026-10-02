@@ -43,9 +43,9 @@ export const PARTISAN_NEUTRAL_COLOR = '#d3d5d4';
 export const PARTISAN_BLUE_COLORS = ['#d1e0ed', '#9eb9d5', '#638bb6', '#345f91', '#12385f'] as const;
 export const PARTISAN_GREEN_COLORS = ['#cfe5da', '#99c7b3', '#5c9f85', '#2f745c', '#0d4937'] as const;
 export const PARTISAN_LEGEND_SCORES = [
-  ...Array.from({ length: 5 }, (_, index) => -50 + index * 10),
+  -45, -35, -25, -15, -7.5,
   0,
-  ...Array.from({ length: 5 }, (_, index) => 10 + index * 10),
+  7.5, 15, 25, 35, 45,
 ];
 export const PENDING_PRESENTATION = { fillColor: '#c7cdd0', className: 'pending-li' } as const;
 
@@ -131,9 +131,10 @@ export function shareScaleColor(value: number, mode: Extract<MapMode, 'green-rat
 }
 
 export function partisanScaleColor(value: number) {
-  if (Math.abs(value) <= 5) return PARTISAN_NEUTRAL_COLOR;
+  const magnitude = Math.abs(value);
+  if (magnitude <= 5) return PARTISAN_NEUTRAL_COLOR;
   const colors = value < 0 ? PARTISAN_BLUE_COLORS : PARTISAN_GREEN_COLORS;
-  const bucket = Math.min(colors.length - 1, Math.floor((Math.abs(value) - 5) / 10));
+  const bucket = magnitude < 10 ? 0 : magnitude < 20 ? 1 : magnitude < 30 ? 2 : magnitude < 40 ? 3 : 4;
   return colors[bucket];
 }
 

@@ -371,11 +371,11 @@ export function MapWorkspace() {
           <section className="map-legend" aria-label="地圖圖例">
             <h2>{selection.mode === 'partisan' ? '藍綠優勢分布' : selection.mode === 'green-rate' ? '綠營相對得票率中位數' : '藍營相對得票率中位數'}</h2>
             {selection.mode === 'partisan' ? <div className="partisan-legend">
-              <p className="legend-description">每格 10 個百分點；負值為藍營領先，正值為綠營領先。</p>
-              <div className="partisan-ramp" aria-label="藍綠差距每 10 個百分點色階">
+              <p className="legend-description">±5 為中立；兩側依 5–10、10–20、20–30、30–40、40 以上分五級。</p>
+              <div className="partisan-ramp" aria-label="藍綠差距五級色階">
                 {PARTISAN_LEGEND_SCORES.map((score) => <span key={score} style={{ background: partisanScaleColor(score) }} />)}
               </div>
-              <div className="partisan-ticks"><span>≤−45</span><span>−25</span><span>0</span><span>+25</span><span>≥+45</span></div>
+              <div className="partisan-ticks"><span>≤−40</span><span>−20</span><span>中立</span><span>+20</span><span>≥+40</span></div>
               <div className="partisan-sides"><span>藍營領先</span><span>綠營領先</span></div>
             </div> : <div className="rate-legend">
               <p className="legend-description">{selection.mode === 'green-rate' ? '綠營票數占藍綠兩方票數的可用屆次中位數。' : '藍營票數占藍綠兩方票數的可用屆次中位數。'}</p>

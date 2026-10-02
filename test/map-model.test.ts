@@ -103,15 +103,21 @@ void test('固定百分比在藍綠模式使用相同門檻位置但不同單色
   assert.notEqual(featureFillPresentation(row, 'green-rate').fillColor, featureFillPresentation(row, 'blue-rate').fillColor);
 });
 
-void test('藍綠差距以 10 個百分點分級，領先越多顏色越深', () => {
+void test('藍綠差距以 ±5 中立及五級藍綠色階呈現', () => {
   assert.equal(partisanScaleColor(-5), PARTISAN_NEUTRAL_COLOR);
   assert.equal(partisanScaleColor(0), PARTISAN_NEUTRAL_COLOR);
   assert.equal(partisanScaleColor(5), PARTISAN_NEUTRAL_COLOR);
   assert.equal(partisanScaleColor(-6), PARTISAN_BLUE_COLORS[0]);
-  assert.equal(partisanScaleColor(-14.9), PARTISAN_BLUE_COLORS[0]);
-  assert.equal(partisanScaleColor(-15), PARTISAN_BLUE_COLORS[1]);
+  assert.equal(partisanScaleColor(-9.9), PARTISAN_BLUE_COLORS[0]);
+  assert.equal(partisanScaleColor(-10), PARTISAN_BLUE_COLORS[1]);
+  assert.equal(partisanScaleColor(-20), PARTISAN_BLUE_COLORS[2]);
+  assert.equal(partisanScaleColor(-30), PARTISAN_BLUE_COLORS[3]);
+  assert.equal(partisanScaleColor(-40), PARTISAN_BLUE_COLORS[4]);
   assert.equal(partisanScaleColor(-60), PARTISAN_BLUE_COLORS.at(-1));
   assert.equal(partisanScaleColor(6), PARTISAN_GREEN_COLORS[0]);
-  assert.equal(partisanScaleColor(15), PARTISAN_GREEN_COLORS[1]);
+  assert.equal(partisanScaleColor(10), PARTISAN_GREEN_COLORS[1]);
+  assert.equal(partisanScaleColor(20), PARTISAN_GREEN_COLORS[2]);
+  assert.equal(partisanScaleColor(30), PARTISAN_GREEN_COLORS[3]);
+  assert.equal(partisanScaleColor(40), PARTISAN_GREEN_COLORS[4]);
   assert.equal(partisanScaleColor(60), PARTISAN_GREEN_COLORS.at(-1));
 });
