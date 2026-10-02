@@ -114,6 +114,17 @@ export function selectionFocusKey(selection: MapSelection) {
   return `${selection.district}\u0000${selection.village}`;
 }
 
+export function shouldBindFeatureTooltip(
+  properties: Pick<VillageDirectoryRow, 'district' | 'li_name_2022'>,
+  selection: MapSelection,
+  selectedOnly: boolean,
+) {
+  return !selectedOnly || (
+    properties.district === selection.district
+    && properties.li_name_2022 === selection.village
+  );
+}
+
 function interpolateHex(start: string, end: string, amount: number) {
   const channel = (color: string, offset: number) => Number.parseInt(color.slice(offset, offset + 2), 16);
   const mix = (offset: number) => Math.round(channel(start, offset) + (channel(end, offset) - channel(start, offset)) * amount);

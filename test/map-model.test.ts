@@ -14,6 +14,7 @@ import {
   partisanScaleColor,
   selectionFocusKey,
   selectionReducer,
+  shouldBindFeatureTooltip,
   VILLAGE_PROMPT,
   villageOptions,
 } from '../lib/map-model.ts';
@@ -68,6 +69,14 @@ void test('關閉里別詳細資料後保留行政區並回到該區全部里', 
   assert.equal(state.district, '士林區');
   assert.equal(state.village, ALL_VILLAGES);
   assert.deepEqual(focusTarget(state), { scope: 'district', district: '士林區' });
+  assert.equal(shouldBindFeatureTooltip({ district: '士林區', li_name_2022: '溪山里' }, state, true), false);
+});
+
+void test('手機僅替目前選取里建立資料卡，避免關閉後跳到其他里', () => {
+  const state = selectionReducer(INITIAL_SELECTION, { type: 'select-feature', district: '士林區', village: '溪山里' });
+  assert.equal(shouldBindFeatureTooltip({ district: '士林區', li_name_2022: '溪山里' }, state, true), true);
+  assert.equal(shouldBindFeatureTooltip({ district: '士林區', li_name_2022: '平等里' }, state, true), false);
+  assert.equal(shouldBindFeatureTooltip({ district: '士林區', li_name_2022: '平等里' }, state, false), true);
 });
 
 void test('切換三種地圖模式保留行政區與里別狀態', () => {

@@ -19,6 +19,7 @@ import {
   partisanScaleColor,
   selectionFocusKey,
   selectionReducer,
+  shouldBindFeatureTooltip,
   SHARE_TICKS,
   type MapMode,
   type VillageDirectoryRow,
@@ -151,6 +152,8 @@ export function MapWorkspace() {
   const [directory, setDirectory] = useState<VillageDirectoryRow[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(6);
+  const [loadLabel, setLoadLabel] = useState('準備載入地圖資料…');
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [isDetailCollapsed, setIsDetailCollapsed] = useState(false);
   const [mobilePicker, setMobilePicker] = useState<'district' | 'village' | null>(null);
@@ -166,6 +169,8 @@ export function MapWorkspace() {
     const dataUrl = (filename: string) => `${import.meta.env.BASE_URL}data/${filename}?v=${encodeURIComponent(dataVersion)}`;
     setLoadError(null);
     setIsLoading(true);
+    setLoadProgress(6);
+    setLoadLabel('準備載入地圖資料…');
 
     void (async () => {
       try {
@@ -176,23 +181,36 @@ export function MapWorkspace() {
         if (loadRequestRef.current !== requestId) return;
         setScoreRows(scores.rows);
         setDirectory(liDirectory.rows);
+        setLoadProgress((progress) => Math.max(progress, 28));
+        setLoadLabel('載入臺北市 456 里界…');
 
         const geojson = await fetchJsonWithRetry<LiCollection>(dataUrl('taipei_li_partisan.geojson'), '里界資料');
         if (loadRequestRef.current !== requestId) return;
         setData(geojson);
+        setLoadProgress((progress) => Math.max(progress, 74));
+        setLoadLabel('繪製里界與資料色階…');
 
         const districts = await fetchJsonWithRetry<DistrictCollection>(dataUrl('taipei_district_boundaries.geojson'), '行政區邊界');
         if (loadRequestRef.current !== requestId) return;
         setDistrictData(districts);
+        setLoadProgress((progress) => Math.max(progress, 90));
+        setLoadLabel('建立行政區邊界…');
       } catch (error) {
         if (loadRequestRef.current !== requestId) return;
         const reason = error instanceof Error ? error.message : '未知錯誤';
         setLoadError(`手機網路或網站快取暫時無法取得地圖資料：${reason}。請確認網路後重新載入。`);
-      } finally {
-        if (loadRequestRef.current === requestId) setIsLoading(false);
+        setIsLoading(false);
       }
     })();
   }, [loadAttempt]);
+
+  useEffect(() => {
+    if (!isLoading) return;
+    const interval = window.setInterval(() => {
+      setLoadProgress((progress) => Math.min(94, progress + (progress < 70 ? 1.4 : 0.45)));
+    }, 420);
+    return () => window.clearInterval(interval);
+  }, [isLoading, loadAttempt]);
 
   const districts = useMemo(() => [
     ALL_DISTRICTS,
@@ -297,6 +315,10 @@ export function MapWorkspace() {
   useEffect(() => {
     const node = mapNode.current;
     if (!mapReady || !node) return;
+    const stopClosePointer = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('.li-tooltip-close')) event.stopPropagation();
+    };
     const closeVillageDetail = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       if (!target?.closest('.li-tooltip-close')) return;
@@ -305,8 +327,14 @@ export function MapWorkspace() {
       villageLayerRef.current?.closeTooltip();
       dispatch({ type: 'select-village', village: ALL_VILLAGES });
     };
+    node.addEventListener('pointerdown', stopClosePointer, true);
+    node.addEventListener('pointerup', stopClosePointer, true);
     node.addEventListener('click', closeVillageDetail, true);
-    return () => node.removeEventListener('click', closeVillageDetail, true);
+    return () => {
+      node.removeEventListener('pointerdown', stopClosePointer, true);
+      node.removeEventListener('pointerup', stopClosePointer, true);
+      node.removeEventListener('click', closeVillageDetail, true);
+    };
   }, [mapReady]);
 
   useEffect(() => {
@@ -315,6 +343,7 @@ export function MapWorkspace() {
     void import('leaflet').then((L) => {
       const map = mapRef.current;
       if (disposed || !map) return;
+      const useSelectedOnlyTooltip = window.matchMedia('(max-width: 720px)').matches;
       villageLayerRef.current?.remove();
       const layer = L.geoJSON(data as FeatureCollection, {
         pane: 'villagePane',
@@ -334,17 +363,29 @@ export function MapWorkspace() {
         },
         onEachFeature: (feature, featureLayer) => {
           const properties = (feature as LiFeature).properties;
-          featureLayer.bindTooltip(tooltipContent(properties), { direction: 'top', opacity: 0.97, sticky: true, className: 'li-data-tooltip' });
-          featureLayer.on('mouseover', () => {
-            layer.eachLayer((otherLayer: Layer & { closeTooltip?: () => void }) => {
-              if (otherLayer !== featureLayer) otherLayer.closeTooltip?.();
+          if (shouldBindFeatureTooltip(properties, selection, useSelectedOnlyTooltip)) {
+            featureLayer.bindTooltip(tooltipContent(properties), {
+              direction: 'top',
+              opacity: 0.97,
+              sticky: !useSelectedOnlyTooltip,
+              interactive: useSelectedOnlyTooltip,
+              className: 'li-data-tooltip',
             });
-          });
+          }
+          if (!useSelectedOnlyTooltip) {
+            featureLayer.on('mouseover', () => {
+              layer.eachLayer((otherLayer: Layer & { closeTooltip?: () => void }) => {
+                if (otherLayer !== featureLayer) otherLayer.closeTooltip?.();
+              });
+            });
+          }
           featureLayer.on('click', () => dispatch({ type: 'select-feature', district: properties.district, village: properties.li_name_2022 }));
         },
       }).addTo(map);
       installPendingPattern(map);
       villageLayerRef.current = layer;
+      setLoadProgress((progress) => Math.max(progress, 84));
+      setLoadLabel('繪製行政區邊界…');
       layer.eachLayer((child: Layer & { feature?: LiFeature; openTooltip?: () => void }) => {
         if (child.feature?.properties.district === selection.district && child.feature.properties.li_name_2022 === selection.village) child.openTooltip?.();
       });
@@ -356,6 +397,7 @@ export function MapWorkspace() {
     if (!mapReady || !mapRef.current || !districtData) return;
     let disposed = false;
     let syncLabels: (() => void) | null = null;
+    let finishTimer: number | null = null;
     void import('leaflet').then((L) => {
       const map = mapRef.current;
       if (disposed || !map) return;
@@ -387,10 +429,14 @@ export function MapWorkspace() {
       };
       map.on('zoomend', syncLabels);
       syncLabels();
+      setLoadProgress(100);
+      setLoadLabel('地圖載入完成');
+      finishTimer = window.setTimeout(() => setIsLoading(false), 320);
     });
     return () => {
       disposed = true;
       if (syncLabels && mapRef.current) mapRef.current.off('zoomend', syncLabels);
+      if (finishTimer !== null) window.clearTimeout(finishTimer);
     };
   }, [districtData, mapReady]);
 
@@ -482,8 +528,17 @@ export function MapWorkspace() {
           <div className="panel-section source-note"><Database size={17} aria-hidden="true" /><p>資料入口<br /><a href="https://data.openfun.tw" target="_blank" rel="noreferrer">歐噴資料庫 OpenFun</a></p></div>
         </aside>
 
-        <div className="map-stage">
+        <div className="map-stage" aria-busy={isLoading}>
           <div ref={mapNode} className="map-canvas" aria-label="臺北市里別藍綠相對支持度地圖" />
+          {isLoading && !loadError && <div className="map-loading" role="status" aria-live="polite">
+            <div className="map-loading-card">
+              <div className="map-loading-mark"><MapPinned size={24} aria-hidden="true" /></div>
+              <strong>地圖載入中</strong>
+              <p>{loadLabel}</p>
+              <div className="map-loading-track" aria-hidden="true"><span style={{ width: `${loadProgress}%` }} /></div>
+              <small>{Math.round(loadProgress)}%</small>
+            </div>
+          </div>}
           <div className="map-grid" aria-hidden="true" />
           <fieldset className="mode-fieldset map-toolbar">
             <legend>地圖模式</legend>
