@@ -1,0 +1,51 @@
+{
+  "total": 0,
+  "page": 1,
+  "per_page": 200,
+  "schema": [
+    {
+      "name": "識別碼",
+      "type": "keyword",
+      "alias": "_id",
+      "description": "{選舉代碼}:{縣市代碼}:{投開票所代號}"
+    },
+    {
+      "name": "選舉代碼",
+      "type": "keyword",
+      "filter": true,
+      "reference": "tw.gov.cec~ref~election-event",
+      "description": "選舉代碼"
+    },
+    {
+      "name": "縣市代碼",
+      "type": "keyword",
+      "filter": true,
+      "reference": "tw.openfun~entity~geo",
+      "description": "縣市代碼"
+    },
+    {
+      "name": "投開票所代號",
+      "type": "keyword",
+      "filter": true,
+      "description": "票所代號"
+    },
+    {
+      "name": "鄉鎮代碼",
+      "type": "keyword",
+      "filter": true,
+      "reference": "tw.openfun~entity~geo",
+      "description": "鄉鎮代碼"
+    },
+    {
+      "name": "村里代碼",
+      "type": "keyword",
+      "multi": true,
+      "filter": true,
+      "reference": "tw.openfun~entity~geo",
+      "description": "村里代碼"
+    }
+  ],
+  "records": [],
+  "limit": 200,
+  "offset": 0
+}

@@ -1,0 +1,103 @@
+{
+  "total": 7,
+  "page": 1,
+  "per_page": 7,
+  "schema": [
+    {
+      "name": "vote_id",
+      "type": "keyword",
+      "alias": "_id",
+      "description": "投票代碼"
+    },
+    {
+      "name": "vote_name",
+      "type": "text",
+      "alias": "_name",
+      "description": "投票名稱"
+    },
+    {
+      "name": "vote_type_id",
+      "type": "keyword",
+      "filter": true,
+      "reference": "tw.gov.cec~ref~election-type",
+      "description": "選舉種類代碼"
+    },
+    {
+      "name": "vote_level_id",
+      "type": "keyword",
+      "filter": true,
+      "reference": "tw.gov.cec~ref~election-level",
+      "description": "選舉層級代碼"
+    },
+    {
+      "name": "vote_date",
+      "type": "date",
+      "description": "投票日期"
+    },
+    {
+      "name": "source",
+      "type": "text",
+      "description": "資料來源"
+    }
+  ],
+  "records": [
+    {
+      "vote_id": "ELC-C1-103",
+      "source": "https://db.cec.gov.tw",
+      "vote_date": "2014-11-29",
+      "vote_type_id": "ELC",
+      "vote_level_id": "C1",
+      "vote_name": "103年直轄市長選舉"
+    },
+    {
+      "vote_id": "ELC-C1-111",
+      "source": "https://db.cec.gov.tw",
+      "vote_date": "2022-11-26",
+      "vote_type_id": "ELC",
+      "vote_level_id": "C1",
+      "vote_name": "111年直轄市長選舉"
+    },
+    {
+      "vote_id": "ELC-C1-83",
+      "source": "https://db.cec.gov.tw",
+      "vote_date": "1994-12-03",
+      "vote_type_id": "ELC",
+      "vote_level_id": "C1",
+      "vote_name": "83年直轄市長選舉"
+    },
+    {
+      "vote_id": "ELC-C1-87",
+      "source": "https://db.cec.gov.tw",
+      "vote_date": "1998-12-05",
+      "vote_type_id": "ELC",
+      "vote_level_id": "C1",
+      "vote_name": "87年直轄市長選舉"
+    },
+    {
+      "vote_id": "ELC-C1-91",
+      "source": "https://db.cec.gov.tw",
+      "vote_date": "2002-12-07",
+      "vote_type_id": "ELC",
+      "vote_level_id": "C1",
+      "vote_name": "91年直轄市長選舉"
+    },
+    {
+      "vote_id": "ELC-C1-95",
+      "source": "https://db.cec.gov.tw",
+      "vote_date": "2006-12-09",
+      "vote_type_id": "ELC",
+      "vote_level_id": "C1",
+      "vote_name": "95年直轄市長選舉"
+    },
+    {
+      "vote_id": "ELC-C1-99",
+      "source": "https://db.cec.gov.tw",
+      "vote_date": "2010-11-27",
+      "vote_type_id": "ELC",
+      "vote_level_id": "C1",
+      "vote_name": "99年直轄市長選舉"
+    }
+  ],
+  "limit": 7,
+  "offset": 0
+}

@@ -1,0 +1,74 @@
+{
+  "generated_at": "2026-10-02T02:53:34.945Z",
+  "source": "OpenFun / 中央選舉委員會",
+  "target_boundary_record_date": "2022-12-31",
+  "target_li_records": 456,
+  "elections": [
+    {
+      "year": 1994,
+      "raw_vote_rows": 1296,
+      "polling_station_rows": 0,
+      "matched_raw_rows": 1296,
+      "unresolved_raw_rows": 0,
+      "matched_2022_li": 432,
+      "normalized_candidate_li_rows": 1296
+    },
+    {
+      "year": 1998,
+      "raw_vote_rows": 864,
+      "polling_station_rows": 0,
+      "matched_raw_rows": 864,
+      "unresolved_raw_rows": 0,
+      "matched_2022_li": 432,
+      "normalized_candidate_li_rows": 864
+    },
+    {
+      "year": 2002,
+      "raw_vote_rows": 2500,
+      "polling_station_rows": 0,
+      "matched_raw_rows": 2500,
+      "unresolved_raw_rows": 0,
+      "matched_2022_li": 449,
+      "normalized_candidate_li_rows": 898
+    },
+    {
+      "year": 2006,
+      "raw_vote_rows": 2716,
+      "polling_station_rows": 1358,
+      "matched_raw_rows": 2716,
+      "unresolved_raw_rows": 0,
+      "matched_2022_li": 449,
+      "normalized_candidate_li_rows": 898
+    },
+    {
+      "year": 2010,
+      "raw_vote_rows": 3014,
+      "polling_station_rows": 1507,
+      "matched_raw_rows": 3014,
+      "unresolved_raw_rows": 0,
+      "matched_2022_li": 456,
+      "normalized_candidate_li_rows": 912
+    },
+    {
+      "year": 2014,
+      "raw_vote_rows": 3068,
+      "polling_station_rows": 1534,
+      "matched_raw_rows": 3068,
+      "unresolved_raw_rows": 0,
+      "matched_2022_li": 456,
+      "normalized_candidate_li_rows": 912
+    },
+    {
+      "year": 2022,
+      "raw_vote_rows": 3510,
+      "polling_station_rows": 1755,
+      "matched_raw_rows": 3510,
+      "unresolved_raw_rows": 0,
+      "matched_2022_li": 456,
+      "normalized_candidate_li_rows": 912
+    }
+  ],
+  "normalized_rows": 6692,
+  "crosswalk_rows": 3130,
+  "review_rows": 0
+}

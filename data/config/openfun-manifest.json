@@ -1,0 +1,47 @@
+{
+  "election_datasets": [
+    {
+      "slug": "tw.gov.cec~ref~election-event",
+      "title": "歷次投票事件清單",
+      "schema_verified": true,
+      "role": "確認七屆直轄市長選舉代碼與日期"
+    },
+    {
+      "slug": "tw.gov.cec~ref~candidates",
+      "title": "中選會候選人資料",
+      "schema_verified": true,
+      "role": "以候選人姓名確認候選人代碼與政黨"
+    },
+    {
+      "slug": "tw.gov.cec~txn~candidates-votes",
+      "title": "中選會候選人得票數",
+      "schema_verified": true,
+      "role": "取得 village 層級候選人得票"
+    },
+    {
+      "slug": "tw.gov.cec~ref~polling-station",
+      "title": "各級選舉投開票所",
+      "schema_verified": true,
+      "role": "把 2006 年後投開票所得票對應至村里代碼"
+    }
+  ],
+  "election_result": {
+    "years": [1994, 1998, 2002, 2006, 2010, 2014, 2022],
+    "normalized_candidate_li_rows": 6692,
+    "yearly_li_scores": 3130,
+    "complete_seven_year_li": 432,
+    "mapping_review_raw_rows": 0,
+    "excluded_years": [2018]
+  },
+  "geo_dataset": {
+    "slug": "tw.openfun~entity~geo",
+    "title": "全國行政區代碼（含歷史）",
+    "schema_verified": true,
+    "documented_version": "2026-05",
+    "records_as_of_2022_count": 456,
+    "records_now_count": 456,
+    "shape_features_returned": 456,
+    "usable_as_2022_boundary": false,
+    "reason": "Records API 的 _as_of=2022-12-31 可確認當時有效的 456 個里代碼；GIS shapes API 不支援 _as_of，回傳屬性也沒有版本或日期，無法證明 polygon 是 2022 年版。"
+  }
+}

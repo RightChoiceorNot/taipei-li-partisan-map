@@ -1,0 +1,225 @@
+{
+  "queried_at": "2026-10-02T01:40:29.279Z",
+  "source": "OpenFun / 中央選舉委員會",
+  "keyword_searches_added": 0,
+  "datasets": [
+    "tw.gov.cec~ref~election-event",
+    "tw.gov.cec~ref~candidates",
+    "tw.gov.cec~txn~candidates-votes",
+    "tw.gov.cec~ref~polling-station"
+  ],
+  "elections": [
+    {
+      "year": 1994,
+      "election_code": "ELC-C1-83",
+      "event_found": true,
+      "candidate_query_mode": "county-filter",
+      "candidate_records": 4,
+      "target_candidates": [
+        {
+          "name": "趙少康",
+          "candidate_code": "ELC-C1-83:63000:2",
+          "party": "新黨",
+          "vote_records": 432,
+          "api_total": 432,
+          "pages": 3,
+          "status": "fetched"
+        },
+        {
+          "name": "黃大洲",
+          "candidate_code": "ELC-C1-83:63000:4",
+          "party": "中國國民黨",
+          "vote_records": 432,
+          "api_total": 432,
+          "pages": 3,
+          "status": "fetched"
+        },
+        {
+          "name": "陳水扁",
+          "candidate_code": "ELC-C1-83:63000:3",
+          "party": "民主進步黨",
+          "vote_records": 432,
+          "api_total": 432,
+          "pages": 3,
+          "status": "fetched"
+        }
+      ],
+      "polling_stations": 0,
+      "status": "fetched"
+    },
+    {
+      "year": 1998,
+      "election_code": "ELC-C1-87",
+      "event_found": true,
+      "candidate_query_mode": "county-filter",
+      "candidate_records": 3,
+      "target_candidates": [
+        {
+          "name": "馬英九",
+          "candidate_code": "ELC-C1-87:63000:1",
+          "party": "中國國民黨",
+          "vote_records": 432,
+          "api_total": 432,
+          "pages": 3,
+          "status": "fetched"
+        },
+        {
+          "name": "陳水扁",
+          "candidate_code": "ELC-C1-87:63000:2",
+          "party": "民主進步黨",
+          "vote_records": 432,
+          "api_total": 432,
+          "pages": 3,
+          "status": "fetched"
+        }
+      ],
+      "polling_stations": 0,
+      "status": "fetched"
+    },
+    {
+      "year": 2002,
+      "election_code": "ELC-C1-91",
+      "event_found": true,
+      "candidate_query_mode": "county-filter",
+      "candidate_records": 2,
+      "target_candidates": [
+        {
+          "name": "馬英九",
+          "candidate_code": "ELC-C1-91:63000:2",
+          "party": "中國國民黨",
+          "vote_records": 1250,
+          "api_total": 1250,
+          "pages": 7,
+          "status": "fetched"
+        },
+        {
+          "name": "李應元",
+          "candidate_code": "ELC-C1-91:63000:1",
+          "party": "民主進步黨",
+          "vote_records": 1250,
+          "api_total": 1250,
+          "pages": 7,
+          "status": "fetched"
+        }
+      ],
+      "polling_stations": 0,
+      "status": "fetched"
+    },
+    {
+      "year": 2006,
+      "election_code": "ELC-C1-95",
+      "event_found": true,
+      "candidate_query_mode": "county-filter",
+      "candidate_records": 6,
+      "target_candidates": [
+        {
+          "name": "郝龍斌",
+          "candidate_code": "ELC-C1-95:63000:5",
+          "party": "中國國民黨",
+          "vote_records": 1358,
+          "api_total": 1358,
+          "pages": 7,
+          "status": "fetched"
+        },
+        {
+          "name": "謝長廷",
+          "candidate_code": "ELC-C1-95:63000:3",
+          "party": "民主進步黨",
+          "vote_records": 1358,
+          "api_total": 1358,
+          "pages": 7,
+          "status": "fetched"
+        }
+      ],
+      "polling_stations": 1358,
+      "status": "fetched"
+    },
+    {
+      "year": 2010,
+      "election_code": "ELC-C1-99",
+      "event_found": true,
+      "candidate_query_mode": "county-filter",
+      "candidate_records": 5,
+      "target_candidates": [
+        {
+          "name": "郝龍斌",
+          "candidate_code": "ELC-C1-99:63000:2",
+          "party": "中國國民黨",
+          "vote_records": 1507,
+          "api_total": 1507,
+          "pages": 8,
+          "status": "fetched"
+        },
+        {
+          "name": "蘇貞昌",
+          "candidate_code": "ELC-C1-99:63000:5",
+          "party": "民主進步黨",
+          "vote_records": 1507,
+          "api_total": 1507,
+          "pages": 8,
+          "status": "fetched"
+        }
+      ],
+      "polling_stations": 1507,
+      "status": "fetched"
+    },
+    {
+      "year": 2014,
+      "election_code": "ELC-C1-103",
+      "event_found": true,
+      "candidate_query_mode": "county-filter",
+      "candidate_records": 7,
+      "target_candidates": [
+        {
+          "name": "連勝文",
+          "candidate_code": "ELC-C1-103:63000:6",
+          "party": "中國國民黨",
+          "vote_records": 1534,
+          "api_total": 1534,
+          "pages": 8,
+          "status": "fetched"
+        },
+        {
+          "name": "柯文哲",
+          "candidate_code": "ELC-C1-103:63000:7",
+          "party": "無黨籍及未經政黨推薦",
+          "vote_records": 1534,
+          "api_total": 1534,
+          "pages": 8,
+          "status": "fetched"
+        }
+      ],
+      "polling_stations": 1534,
+      "status": "fetched"
+    },
+    {
+      "year": 2022,
+      "election_code": "ELC-C1-111",
+      "event_found": true,
+      "candidate_query_mode": "county-filter",
+      "candidate_records": 12,
+      "target_candidates": [
+        {
+          "name": "蔣萬安",
+          "candidate_code": "ELC-C1-111:63000:6",
+          "party": "中國國民黨",
+          "vote_records": 1755,
+          "api_total": 1755,
+          "pages": 9,
+          "status": "fetched"
+        },
+        {
+          "name": "陳時中",
+          "candidate_code": "ELC-C1-111:63000:12",
+          "party": "民主進步黨",
+          "vote_records": 1755,
+          "api_total": 1755,
+          "pages": 9,
+          "status": "fetched"
+        }
+      ],
+      "polling_stations": 1755,
+      "status": "fetched"
+    }
+  ]
+}

@@ -1,0 +1,223 @@
+{
+  "total": 3,
+  "page": 1,
+  "per_page": 200,
+  "schema": [
+    {
+      "name": "選舉代碼",
+      "type": "keyword",
+      "filter": true,
+      "reference": "tw.gov.cec~ref~election-event",
+      "description": "選舉代碼"
+    },
+    {
+      "name": "候選人代碼",
+      "type": "keyword",
+      "alias": "_id",
+      "description": "候選人代碼"
+    },
+    {
+      "name": "人物代碼",
+      "type": "keyword",
+      "label": "人物代碼",
+      "filter": true,
+      "reference": "tw.gov.cec~ref~candidates",
+      "description": "相同人以第一次參選候選人代碼為人物代碼"
+    },
+    {
+      "name": "選舉名稱",
+      "type": "text",
+      "description": "選舉名稱"
+    },
+    {
+      "name": "姓名",
+      "type": "text",
+      "alias": "_name",
+      "description": "姓名"
+    },
+    {
+      "name": "選區別",
+      "type": "text",
+      "description": "選區別"
+    },
+    {
+      "name": "選區別.縣市",
+      "type": "keyword",
+      "filter": true,
+      "reference": "tw.openfun~entity~geo",
+      "description": "選區別"
+    },
+    {
+      "name": "選區別.鄉鎮市區",
+      "type": "keyword",
+      "filter": true,
+      "reference": "tw.openfun~entity~geo",
+      "description": "選區別"
+    },
+    {
+      "name": "選區別.村里",
+      "type": "keyword",
+      "filter": true,
+      "reference": "tw.openfun~entity~geo",
+      "description": "選區別"
+    },
+    {
+      "name": "號次",
+      "type": "integer",
+      "description": "號次"
+    },
+    {
+      "name": "政黨",
+      "type": "keyword",
+      "filter": true,
+      "description": "政黨"
+    },
+    {
+      "name": "政黨.代碼",
+      "type": "keyword",
+      "filter": true,
+      "reference": "tw.gov.moi~ref~party",
+      "description": "政黨代碼"
+    },
+    {
+      "name": "性別",
+      "type": "keyword",
+      "filter": true,
+      "description": "性別"
+    },
+    {
+      "name": "出生日期",
+      "type": "text",
+      "description": "出生日期"
+    },
+    {
+      "name": "出生日期.日期",
+      "type": "date",
+      "description": "出生日期"
+    },
+    {
+      "name": "出生地",
+      "type": "keyword",
+      "filter": true,
+      "description": "出生地"
+    },
+    {
+      "name": "學歷",
+      "type": "keyword",
+      "filter": true,
+      "description": "學歷"
+    },
+    {
+      "name": "現任",
+      "type": "keyword",
+      "filter": true,
+      "description": "現任"
+    },
+    {
+      "name": "當選註記",
+      "type": "keyword",
+      "filter": true,
+      "description": "當選註記"
+    },
+    {
+      "name": "副手",
+      "type": "text",
+      "description": "副手姓名"
+    },
+    {
+      "name": "選舉層級",
+      "type": "keyword",
+      "filter": true,
+      "reference": "tw.gov.cec~ref~election-level",
+      "description": "選舉層級"
+    }
+  ],
+  "records": [
+    {
+      "候選人代碼": "ELC-C1-87:63000:1",
+      "副手": "",
+      "學歷": "",
+      "年齡": "99",
+      "性別": "男",
+      "政黨": "中國國民黨",
+      "現任": "N",
+      "縣市": "臺北市",
+      "號次": "1",
+      "出生地": "",
+      "村里別": "",
+      "省市別": "臺北市",
+      "縣市別": "",
+      "選區別": "臺北市",
+      "人物代碼": "ELC-C1-87:63000:1",
+      "出生日期": "1950-00-00",
+      "當選註記": "*",
+      "選舉代碼": "ELC-C1-87",
+      "選舉名稱": "87年直轄市市長選舉",
+      "選舉層級": "C1",
+      "鄉鎮市區": "",
+      "政黨.代碼": "1",
+      "行政區代碼": "63000",
+      "選區別.縣市": "63000",
+      "出生日期.日期": "1950-01-01",
+      "姓名": "馬英九"
+    },
+    {
+      "候選人代碼": "ELC-C1-87:63000:2",
+      "副手": "",
+      "學歷": "",
+      "年齡": "99",
+      "性別": "男",
+      "政黨": "民主進步黨",
+      "現任": "Y",
+      "縣市": "臺北市",
+      "號次": "2",
+      "出生地": "",
+      "村里別": "",
+      "省市別": "臺北市",
+      "縣市別": "",
+      "選區別": "臺北市",
+      "人物代碼": "ELC-C1-83:63000:3",
+      "出生日期": "1951-00-00",
+      "當選註記": "",
+      "選舉代碼": "ELC-C1-87",
+      "選舉名稱": "87年直轄市市長選舉",
+      "選舉層級": "C1",
+      "鄉鎮市區": "",
+      "政黨.代碼": "16",
+      "行政區代碼": "63000",
+      "選區別.縣市": "63000",
+      "出生日期.日期": "1951-01-01",
+      "姓名": "陳水扁"
+    },
+    {
+      "候選人代碼": "ELC-C1-87:63000:3",
+      "副手": "",
+      "學歷": "",
+      "年齡": "99",
+      "性別": "男",
+      "政黨": "新黨",
+      "現任": "N",
+      "縣市": "臺北市",
+      "號次": "3",
+      "出生地": "",
+      "村里別": "",
+      "省市別": "臺北市",
+      "縣市別": "",
+      "選區別": "臺北市",
+      "人物代碼": "ELC-C1-87:63000:3",
+      "出生日期": "1938-00-00",
+      "當選註記": "",
+      "選舉代碼": "ELC-C1-87",
+      "選舉名稱": "87年直轄市市長選舉",
+      "選舉層級": "C1",
+      "鄉鎮市區": "",
+      "政黨.代碼": "74",
+      "行政區代碼": "63000",
+      "選區別.縣市": "63000",
+      "出生日期.日期": "1938-01-01",
+      "姓名": "王建煊"
+    }
+  ],
+  "limit": 200,
+  "offset": 0
+}

@@ -1,0 +1,18 @@
+{
+  "q": "行政區 地圖 里界",
+  "datasets": {
+    "total": 1,
+    "results": [
+      {
+        "slug": "tw.openfun~entity~geo",
+        "title": "中華民國行政區資料(最新版本)",
+        "description": "中華民國縣市、鄉鎮市區、村里等主體資料，並包含新舊名稱及變化時間",
+        "tags": "[\"縣市\", \"鄉鎮市區\", \"村里\", \"行政區變化紀錄\"]",
+        "dataset_role": ["entity"],
+        "url": "https://data.openfun.tw/datasets/tw.openfun~entity~geo",
+        "skill_md_url": "https://data.openfun.tw/datasets/tw.openfun~entity~geo/skill.md"
+      }
+    ]
+  },
+  "entities": { "total": 1, "groups": [] }
+}

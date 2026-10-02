@@ -1,0 +1,34 @@
+{
+  "queried_at": "2026-10-02T01:27:58.624Z",
+  "source": "OpenFun / 內政部",
+  "dataset_slug": "tw.openfun~entity~geo",
+  "records_query": {
+    "county_id": "63000",
+    "level": "village",
+    "as_of_2022": "2022-12-31",
+    "records_2022": 456,
+    "api_total_2022": 456,
+    "pages_2022": 3,
+    "records_now": 456,
+    "api_total_now": 456,
+    "pages_now": 3,
+    "added_after_2022_ids": [],
+    "absent_now_ids": []
+  },
+  "shapes_query": {
+    "endpoint_supports_as_of": false,
+    "requested_2022_record_ids": 456,
+    "returned_features": 456,
+    "missing_record_ids": [],
+    "property_keys": [
+      "dataset_slug",
+      "record_id"
+    ],
+    "version_like_property_keys": []
+  },
+  "conclusion": {
+    "records_are_valid_for_2022_12_31": true,
+    "geometry_verified_as_2022": false,
+    "reason": "The records API supports _as_of, but the GIS shapes endpoint has no _as_of parameter and the returned features do not independently establish a 2022 geometry vintage."
+  }
+}
