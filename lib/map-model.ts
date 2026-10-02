@@ -39,6 +39,14 @@ export type MapMetricProperties = {
 export const SHARE_TICKS = [35, 40, 45, 50, 55, 60, 65] as const;
 export const GREEN_SHARE_COLORS = ['#edf8f3', '#d7eee3', '#b5dfcd', '#82c6aa', '#4aa47f', '#237d5b', '#0d563d'] as const;
 export const BLUE_SHARE_COLORS = ['#eff6fb', '#d9eaf5', '#b7d5e9', '#83b5d7', '#518fc0', '#2f6b9f', '#174a78'] as const;
+export const PARTISAN_NEUTRAL_COLOR = '#d3d5d4';
+export const PARTISAN_BLUE_COLORS = ['#e4edf5', '#d1e0ed', '#b9cee2', '#9eb9d5', '#80a3c6', '#638bb6', '#4974a4', '#345f91', '#224b79', '#12385f'] as const;
+export const PARTISAN_GREEN_COLORS = ['#e3f0e9', '#cfe5da', '#b6d7c7', '#99c7b3', '#7bb49d', '#5c9f85', '#438a70', '#2f745c', '#1e5e49', '#0d4937'] as const;
+export const PARTISAN_LEGEND_SCORES = [
+  ...Array.from({ length: 10 }, (_, index) => -52.5 + index * 5),
+  0,
+  ...Array.from({ length: 10 }, (_, index) => 7.5 + index * 5),
+];
 export const PENDING_PRESENTATION = { fillColor: '#c7cdd0', className: 'pending-li' } as const;
 
 export const INITIAL_SELECTION: MapSelection = {
@@ -122,6 +130,13 @@ export function shareScaleColor(value: number, mode: Extract<MapMode, 'green-rat
   return interpolateHex(colors[upperIndex - 1], colors[upperIndex], (value - lowerTick) / (upperTick - lowerTick));
 }
 
+export function partisanScaleColor(value: number) {
+  if (Math.abs(value) <= 5) return PARTISAN_NEUTRAL_COLOR;
+  const colors = value < 0 ? PARTISAN_BLUE_COLORS : PARTISAN_GREEN_COLORS;
+  const bucket = Math.min(colors.length - 1, Math.floor((Math.abs(value) - 5) / 5));
+  return colors[bucket];
+}
+
 export function featureFillPresentation(properties: MapMetricProperties | undefined, mode: MapMode) {
   const reliable = properties?.mapping_status === 'matched'
     && Number.isFinite(properties.median_score)
@@ -130,12 +145,7 @@ export function featureFillPresentation(properties: MapMetricProperties | undefi
   if (!reliable || !properties) return PENDING_PRESENTATION;
   if (mode === 'green-rate') return { fillColor: shareScaleColor(properties.green_median_share!, mode), className: '' };
   if (mode === 'blue-rate') return { fillColor: shareScaleColor(properties.blue_median_share!, mode), className: '' };
-  const colors: Record<string, string> = {
-    綠營優勢區: '#19815f',
-    中立區: '#d3d5d4',
-    藍營優勢區: '#386fa7',
-  };
-  return { fillColor: colors[properties.classification] ?? PENDING_PRESENTATION.fillColor, className: colors[properties.classification] ? '' : PENDING_PRESENTATION.className };
+  return { fillColor: partisanScaleColor(properties.median_score!), className: '' };
 }
 
 export function featureEmphasis(

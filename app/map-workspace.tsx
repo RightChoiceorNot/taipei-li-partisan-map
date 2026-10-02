@@ -15,6 +15,8 @@ import {
   focusTarget,
   GREEN_SHARE_COLORS,
   INITIAL_SELECTION,
+  PARTISAN_LEGEND_SCORES,
+  partisanScaleColor,
   selectionFocusKey,
   selectionReducer,
   SHARE_TICKS,
@@ -368,11 +370,14 @@ export function MapWorkspace() {
           {blocker && <Alert className="map-alert"><AlertTriangle /><AlertTitle>地圖資料無法載入</AlertTitle><AlertDescription>{blocker}</AlertDescription></Alert>}
           <section className="map-legend" aria-label="地圖圖例">
             <h2>{selection.mode === 'partisan' ? '藍綠優勢分布' : selection.mode === 'green-rate' ? '綠營相對得票率中位數' : '藍營相對得票率中位數'}</h2>
-            {selection.mode === 'partisan' ? <ul className="legend-list">
-              <li><span style={{ background: CLASS_COLORS['綠營優勢區'] }} />綠營優勢 <b>&gt; +5</b></li>
-              <li><span style={{ background: CLASS_COLORS['中立區'] }} />中立 <b>−5 至 +5</b></li>
-              <li><span style={{ background: CLASS_COLORS['藍營優勢區'] }} />藍營優勢 <b>&lt; −5</b></li>
-            </ul> : <div className="rate-legend">
+            {selection.mode === 'partisan' ? <div className="partisan-legend">
+              <p className="legend-description">每格 5 個百分點；負值為藍營領先，正值為綠營領先。</p>
+              <div className="partisan-ramp" aria-label="藍綠差距每 5 個百分點色階">
+                {PARTISAN_LEGEND_SCORES.map((score) => <span key={score} style={{ background: partisanScaleColor(score) }} />)}
+              </div>
+              <div className="partisan-ticks"><span>≤−50</span><span>−25</span><span>0</span><span>+25</span><span>≥+50</span></div>
+              <div className="partisan-sides"><span>藍營領先</span><span>綠營領先</span></div>
+            </div> : <div className="rate-legend">
               <p className="legend-description">{selection.mode === 'green-rate' ? '綠營票數占藍綠兩方票數的可用屆次中位數。' : '藍營票數占藍綠兩方票數的可用屆次中位數。'}</p>
               <div className="rate-ramp" style={{ background: `linear-gradient(90deg, ${(selection.mode === 'green-rate' ? GREEN_SHARE_COLORS : BLUE_SHARE_COLORS).join(', ')})` }} />
               <div className="rate-ticks">{SHARE_TICKS.map((tick, index) => <span key={tick}>{index === 0 ? '≤35' : index === SHARE_TICKS.length - 1 ? '≥65' : `${tick}`}</span>)}</div>

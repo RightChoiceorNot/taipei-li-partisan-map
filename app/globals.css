@@ -76,8 +76,15 @@ button, input { font: inherit; }
 .legend-list li > span { width: 16px; height: 16px; border-radius: 3px; border: 1px solid #52616a33; }
 .legend-list b { color: #53636b; font-size: .76rem; }
 .striped { background: repeating-linear-gradient(135deg, #d59b38 0 4px, #f0e3c5 4px 8px); }
-.legend-description { margin: 0 0 12px; color: #607079; font-size: .76rem; line-height: 1.55; }
-.rate-ramp { height: 14px; border-radius: 3px; border: 1px solid #52616a33; }
+  .legend-description { margin: 0 0 12px; color: #607079; font-size: .76rem; line-height: 1.55; }
+  .partisan-ramp { display: grid; grid-template-columns: repeat(21, minmax(0, 1fr)); height: 14px; overflow: hidden; border: 1px solid #52616a33; border-radius: 3px; }
+  .partisan-ramp span + span { border-left: 1px solid #ffffff66; }
+  .partisan-ticks { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 6px; color: #607079; font-size: .58rem; font-variant-numeric: tabular-nums; }
+  .partisan-ticks span { text-align: center; }
+  .partisan-ticks span:first-child { text-align: left; }
+  .partisan-ticks span:last-child { text-align: right; }
+  .partisan-sides { display: flex; justify-content: space-between; margin-top: 5px; color: #53636b; font-size: .6rem; }
+  .rate-ramp { height: 14px; border-radius: 3px; border: 1px solid #52616a33; }
 .rate-ticks { display: grid; grid-template-columns: repeat(7, 1fr); margin-top: 6px; color: #607079; font-size: .62rem; font-variant-numeric: tabular-nums; }
 .rate-ticks span { text-align: center; transform: translateX(-50%); }
 .rate-ticks span:first-child { text-align: left; transform: none; }
@@ -106,7 +113,10 @@ button, input { font: inherit; }
 .map-legend .legend-list li { grid-template-columns: 12px minmax(0, 1fr); gap: 6px; }
 .map-legend .legend-list li > span { width: 12px; height: 12px; }
 .map-legend .legend-list b { grid-column: 2; font-size: .63rem; }
-.map-legend .legend-description { margin-bottom: 9px; font-size: .67rem; line-height: 1.45; }
+  .map-legend .legend-description { margin-bottom: 9px; font-size: .67rem; line-height: 1.45; }
+  .map-legend .partisan-ramp { height: 11px; }
+  .map-legend .partisan-ticks { font-size: .5rem; }
+  .map-legend .partisan-sides { font-size: .56rem; }
 .map-legend .rate-ramp { height: 11px; }
 .map-legend .rate-ticks { font-size: .52rem; }
 .map-legend .boundary-key { display: grid; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #d9e1e2; }
