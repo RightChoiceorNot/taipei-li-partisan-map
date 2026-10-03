@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   ALL_DISTRICTS,
   ALL_VILLAGES,
+  districtFlipSummary,
   districtSummary,
   featureEmphasis,
   featureFillPresentation,
@@ -40,6 +41,18 @@ void test('切換全部行政區與各區時，里數與藍綠優勢統計同步
   assert.deepEqual(districtSummary(summaryRows, ALL_DISTRICTS), { total: 4, green: 2, blue: 1, neutral: 1 });
   assert.deepEqual(districtSummary(summaryRows, '松山區'), { total: 3, green: 1, blue: 1, neutral: 1 });
   assert.deepEqual(districtSummary(summaryRows, '信義區'), { total: 1, green: 1, blue: 0, neutral: 0 });
+});
+
+void test('翻轉模式依全市或行政區統計藍轉綠與綠轉藍里數', () => {
+  const rows = [
+    { district: '甲區', classification: '藍營優勢區', median_score: -8, green_median_share: 46, blue_median_share: 54, mapping_status: 'matched', score_2014: 12 },
+    { district: '甲區', classification: '藍營優勢區', median_score: -9, green_median_share: 45, blue_median_share: 55, mapping_status: 'matched', score_2014: -4 },
+    { district: '甲區', classification: '綠營優勢區', median_score: 11, green_median_share: 55.5, blue_median_share: 44.5, mapping_status: 'matched', score_2002: -3 },
+    { district: '乙區', classification: '綠營優勢區', median_score: 12, green_median_share: 56, blue_median_share: 44, mapping_status: 'matched', score_2002: 5 },
+  ];
+  assert.deepEqual(districtFlipSummary(rows, ALL_DISTRICTS), { blueToGreen: 1, greenToBlue: 1 });
+  assert.deepEqual(districtFlipSummary(rows, '甲區'), { blueToGreen: 1, greenToBlue: 1 });
+  assert.deepEqual(districtFlipSummary(rows, '乙區'), { blueToGreen: 0, greenToBlue: 0 });
 });
 
 void test('選定行政區後，里別清單只包含該區並依官方代碼排序', () => {

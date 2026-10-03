@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import {
   ALL_DISTRICTS,
   ALL_VILLAGES,
+  districtFlipSummary,
   districtSummary,
   ELECTION_YEARS,
   featureEmphasis,
@@ -266,6 +267,10 @@ export function MapWorkspace() {
     () => districtSummary(scoreRows, selection.district),
     [scoreRows, selection.district],
   );
+  const currentDistrictFlipSummary = useMemo(
+    () => districtFlipSummary(scoreRows, selection.district),
+    [scoreRows, selection.district],
+  );
   const selected = useMemo(() => scoreRows.find((row) =>
     row.district === selection.district && row.li_name_2022 === selection.village,
   ) ?? data?.features.find((feature) =>
@@ -466,9 +471,9 @@ export function MapWorkspace() {
           <div className="panel-section coverage-card">
             <p>{selection.district === ALL_DISTRICTS ? '臺北市里數' : `${selection.district}里數`}</p>
             <div className="coverage-total"><strong>{currentDistrictSummary.total}</strong><span>里</span></div>
-            <div className="advantage-counts" aria-label="藍綠優勢里數">
-              <span className="green-count"><i aria-hidden="true" />綠營優勢 <b>{currentDistrictSummary.green}</b></span>
-              <span className="blue-count"><i aria-hidden="true" />藍營優勢 <b>{currentDistrictSummary.blue}</b></span>
+            <div className="advantage-counts" aria-label={selection.mode === 'flip' ? '藍綠翻轉里數' : '藍綠優勢里數'}>
+              <span className="green-count"><i aria-hidden="true" />{selection.mode === 'flip' ? '藍轉綠' : '綠營優勢'} <b>{selection.mode === 'flip' ? currentDistrictFlipSummary.blueToGreen : currentDistrictSummary.green}</b></span>
+              <span className="blue-count"><i aria-hidden="true" />{selection.mode === 'flip' ? '綠轉藍' : '藍營優勢'} <b>{selection.mode === 'flip' ? currentDistrictFlipSummary.greenToBlue : currentDistrictSummary.blue}</b></span>
             </div>
           </div>
           <div className="panel-section controls">

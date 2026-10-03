@@ -121,6 +121,18 @@ export function districtSummary(rows: DistrictSummaryRow[], district: string) {
   };
 }
 
+export function districtFlipSummary(rows: Array<DistrictSummaryRow & MapMetricProperties>, district: string) {
+  const scopedRows = district === ALL_DISTRICTS
+    ? rows
+    : rows.filter((row) => row.district === district);
+  return {
+    blueToGreen: scopedRows.filter((row) => row.classification === '藍營優勢區'
+      && flipHistory(row).some((flip) => flip.to === 'green')).length,
+    greenToBlue: scopedRows.filter((row) => row.classification === '綠營優勢區'
+      && flipHistory(row).some((flip) => flip.to === 'blue')).length,
+  };
+}
+
 export function focusTarget(selection: MapSelection) {
   if (selection.district === ALL_DISTRICTS) return { scope: 'city' as const };
   if (selection.village === ALL_VILLAGES || selection.village === VILLAGE_PROMPT) {
