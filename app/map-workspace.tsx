@@ -118,7 +118,7 @@ function tooltipContent(properties: LiProperties, mode: MapMode) {
     : `${properties.elections_count} 屆可用資料中位數（${properties.years_included.replaceAll('|', '、')}）`;
   const flips = flipHistory(properties);
   const flipSummary = mode === 'flip'
-    ? `<div class="tooltip-flips"><b>翻轉紀錄</b>${flips.length ? flips.map((flip) => `<span>${flip.label}</span>`).join('') : '<span>七屆中未出現跨越 ±5 的陣營翻轉</span>'}</div>`
+    ? `<div class="tooltip-flips"><b>翻盤年份</b>${flips.length ? flips.map((flip) => `<span>${flip.label}</span>`).join('') : '<span>未出現由原本優勢陣營翻盤的年份</span>'}</div>`
     : '';
   return `<div class="li-tooltip"><p>${properties.district}</p><h3>${properties.li_name_2022}</h3><small class="tooltip-coverage">${coverage}</small><dl><dt>藍綠差距中位數</dt><dd>${formatScore(properties.median_score)}</dd><dt>綠營相對得票率中位數</dt><dd>${formatPercent(properties.green_median_share)}</dd><dt>藍營相對得票率中位數</dt><dd>${formatPercent(properties.blue_median_share)}</dd><dt>分類</dt><dd>${properties.classification}</dd></dl>${flipSummary}<div class="tooltip-years">${yearScores}</div>${properties.mapping_status !== 'matched' ? `<strong class="tooltip-warning">里界對應警示：${properties.mapping_status}</strong>` : ''}</div>`;
 }
@@ -541,7 +541,7 @@ export function MapWorkspace() {
             <h2>{selected.li_name_2022}</h2>
             <small>{selected.elections_count === 7 ? '七屆完整中位數' : `${selected.elections_count} 屆可用資料中位數`}</small>
             <dl><dt>藍綠差距中位數</dt><dd>{formatScore(selected.median_score)}</dd><dt>綠營相對得票率中位數</dt><dd>{formatPercent(selected.green_median_share)}</dd><dt>藍營相對得票率中位數</dt><dd>{formatPercent(selected.blue_median_share)}</dd><dt>分類</dt><dd>{selected.classification}</dd></dl>
-            {selection.mode === 'flip' && <div className="mobile-map-flips"><b>翻轉紀錄</b>{selectedFlips.length ? selectedFlips.map((flip) => <span key={`${flip.fromYear}-${flip.year}`}>{flip.label}</span>) : <span>七屆中未出現跨越 ±5 的陣營翻轉</span>}</div>}
+            {selection.mode === 'flip' && <div className="mobile-map-flips"><b>翻盤年份</b>{selectedFlips.length ? selectedFlips.map((flip) => <span key={flip.year}>{flip.label}</span>) : <span>未出現由原本優勢陣營翻盤的年份</span>}</div>}
             <div className="mobile-map-years">{ELECTION_YEARS.map((year) => <div key={year}><span>{year}</span><b>{formatScore(selected[`score_${year}` as keyof LiProperties] as number | null)}</b></div>)}</div>
           </section>}
           <fieldset className="mode-fieldset map-toolbar">
@@ -560,10 +560,10 @@ export function MapWorkspace() {
               <div className="partisan-ticks"><span>≤−40</span><span>−20</span><span>中立</span><span>+20</span><span>≥+40</span></div>
               <div className="partisan-sides"><span>藍營領先</span><span>綠營領先</span></div>
             </div> : selection.mode === 'flip' ? <div className="flip-legend">
-              <p>略過中立年份，顏色表示最近一次翻轉後的優勢陣營。</p>
-              <span><i style={{ background: FLIP_GREEN_COLOR }} />最近一次藍翻綠</span>
-              <span><i style={{ background: FLIP_BLUE_COLOR }} />最近一次綠翻藍</span>
-              <span><i style={{ background: FLIP_NONE_COLOR }} />未發生翻轉</span>
+              <p>以中位數分類為原本陣營；任一屆由對手勝出即標示。</p>
+              <span><i style={{ background: FLIP_GREEN_COLOR }} />藍營優勢里曾翻綠</span>
+              <span><i style={{ background: FLIP_BLUE_COLOR }} />綠營優勢里曾翻藍</span>
+              <span><i style={{ background: FLIP_NONE_COLOR }} />未翻盤或中立</span>
             </div> : <div className="rate-legend">
               <p className="legend-description">{selection.mode === 'green-rate' ? '綠營票數占藍綠兩方票數的可用屆次中位數。' : '藍營票數占藍綠兩方票數的可用屆次中位數。'}</p>
               <div className="rate-ramp" style={{ background: `linear-gradient(90deg, ${(selection.mode === 'green-rate' ? GREEN_SHARE_COLORS : BLUE_SHARE_COLORS).join(', ')})` }} />
@@ -587,7 +587,7 @@ export function MapWorkspace() {
               <button className="back-to-list" type="button" onClick={() => dispatch({ type: 'select-village', village: ALL_VILLAGES })}>返回本區全部里</button>
               <div className="detail-heading"><p>{selected.district}</p><h2>{selected.li_name_2022}</h2><span style={{ color: CLASS_COLORS[selected.classification] }}>{selected.classification}</span></div>
               <div className={`median-card ${selected.classification === '綠營優勢區' ? 'is-green' : selected.classification === '藍營優勢區' ? 'is-blue' : 'is-neutral'}`}><div><span>{selected.elections_count === 7 ? '七屆差距中位數' : `${selected.elections_count} 屆可用資料差距中位數`}</span><strong>{formatScore(selected.median_score)}</strong><small>百分點</small></div><dl><div><dt>綠營相對得票率中位數</dt><dd>{formatPercent(selected.green_median_share)}</dd></div><div><dt>藍營相對得票率中位數</dt><dd>{formatPercent(selected.blue_median_share)}</dd></div></dl></div>
-              {selection.mode === 'flip' && <section className="detail-flip-history"><h3>翻轉紀錄</h3>{selectedFlips.length ? selectedFlips.map((flip) => <p key={`${flip.fromYear}-${flip.year}`} className={flip.to === 'green' ? 'to-green' : 'to-blue'}>{flip.label}</p>) : <p className="no-flip">七屆中未出現跨越 ±5 的陣營翻轉。</p>}</section>}
+              {selection.mode === 'flip' && <section className="detail-flip-history"><h3>翻盤年份</h3>{selectedFlips.length ? selectedFlips.map((flip) => <p key={flip.year} className={flip.to === 'green' ? 'to-green' : 'to-blue'}>{flip.label}</p>) : <p className="no-flip">未出現由原本優勢陣營翻盤的年份。</p>}</section>}
               <div className="year-list">{YEAR_RULES.map(([year, rule]) => <div key={year}><span>{year}</span><strong>{formatScore(selected[`score_${year}` as keyof LiProperties] as number | null)}</strong><small>{rule}</small></div>)}</div>
               {selected.elections_count < 7 && <Alert className="coverage-warning"><Info /><AlertTitle>資料涵蓋 {selected.elections_count} 屆</AlertTitle><AlertDescription>此里在早期選舉沒有可直接對應的現行里別票數，只採用 {selected.years_included.replaceAll('|', '、')} 年實際得票計算；未將舊里票數拆分、複製或估算。</AlertDescription></Alert>}
               {selected.mapping_status !== 'matched' && <Alert className="mapping-warning"><AlertTriangle /><AlertTitle>里界對應需確認</AlertTitle><AlertDescription>{selected.mapping_status}</AlertDescription></Alert>}

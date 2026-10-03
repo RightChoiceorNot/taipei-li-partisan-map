@@ -45,7 +45,6 @@ export type MapMetricProperties = {
 
 export type FlipCamp = 'green' | 'blue';
 export type FlipEvent = {
-  fromYear: number;
   year: number;
   from: FlipCamp;
   to: FlipCamp;
@@ -169,22 +168,24 @@ export function partisanScaleColor(value: number) {
   return colors[bucket];
 }
 
-function advantageCamp(score: number | null | undefined): FlipCamp | null {
-  if (!Number.isFinite(score) || Math.abs(score!) <= 5) return null;
+function electionWinner(score: number | null | undefined): FlipCamp | null {
+  if (!Number.isFinite(score) || score === 0) return null;
   return score! > 0 ? 'green' : 'blue';
 }
 
 export function flipHistory(properties: MapMetricProperties): FlipEvent[] {
+  const originalCamp: FlipCamp | null = properties.classification === '綠營優勢區'
+    ? 'green'
+    : properties.classification === '藍營優勢區'
+      ? 'blue'
+      : null;
+  if (!originalCamp) return [];
   const flips: FlipEvent[] = [];
-  let previous: { year: number; camp: FlipCamp } | null = null;
   for (const year of ELECTION_YEARS) {
-    const camp = advantageCamp(properties[`score_${year}` as keyof MapMetricProperties] as number | null | undefined);
-    if (!camp) continue;
-    if (previous && previous.camp !== camp) {
-      const direction = previous.camp === 'blue' ? '藍翻綠' : '綠翻藍';
-      flips.push({ fromYear: previous.year, year, from: previous.camp, to: camp, label: `${previous.year}→${year} ${direction}` });
-    }
-    previous = { year, camp };
+    const winner = electionWinner(properties[`score_${year}` as keyof MapMetricProperties] as number | null | undefined);
+    if (!winner || winner === originalCamp) continue;
+    const direction = originalCamp === 'blue' ? '藍翻綠' : '綠翻藍';
+    flips.push({ year, from: originalCamp, to: winner, label: `${year} ${direction}` });
   }
   return flips;
 }
@@ -196,9 +197,9 @@ export function featureFillPresentation(properties: MapMetricProperties | undefi
     && Number.isFinite(properties.blue_median_share);
   if (!reliable || !properties) return PENDING_PRESENTATION;
   if (mode === 'flip') {
-    const latestFlip = flipHistory(properties).at(-1);
-    if (!latestFlip) return { fillColor: FLIP_NONE_COLOR, className: '' };
-    return { fillColor: latestFlip.to === 'green' ? FLIP_GREEN_COLOR : FLIP_BLUE_COLOR, className: '' };
+    const flip = flipHistory(properties)[0];
+    if (!flip) return { fillColor: FLIP_NONE_COLOR, className: '' };
+    return { fillColor: flip.to === 'green' ? FLIP_GREEN_COLOR : FLIP_BLUE_COLOR, className: '' };
   }
   if (mode === 'green-rate') return { fillColor: shareScaleColor(properties.green_median_share!, mode), className: '' };
   if (mode === 'blue-rate') return { fillColor: shareScaleColor(properties.blue_median_share!, mode), className: '' };

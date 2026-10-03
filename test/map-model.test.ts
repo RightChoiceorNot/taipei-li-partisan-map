@@ -97,12 +97,12 @@ void test('切換四種地圖模式保留行政區與里別狀態', () => {
   }
 });
 
-void test('翻轉模式略過中立年份並記錄每次跨陣營翻轉', () => {
+void test('翻轉模式以長期分類為原本陣營並標出對手勝出的年份', () => {
   const row = {
-    median_score: 8,
-    green_median_share: 54,
-    blue_median_share: 46,
-    classification: '綠營優勢區',
+    median_score: -8,
+    green_median_share: 46,
+    blue_median_share: 54,
+    classification: '藍營優勢區',
     mapping_status: 'matched',
     score_1994: -12,
     score_1998: -4,
@@ -113,26 +113,30 @@ void test('翻轉模式略過中立年份並記錄每次跨陣營翻轉', () => 
     score_2022: 9,
   };
   assert.deepEqual(flipHistory(row).map((flip) => flip.label), [
-    '1994→2002 藍翻綠',
-    '2002→2010 綠翻藍',
-    '2010→2022 藍翻綠',
+    '2002 藍翻綠',
+    '2006 藍翻綠',
+    '2022 藍翻綠',
   ]);
   assert.equal(featureFillPresentation(row, 'flip').fillColor, FLIP_GREEN_COLOR);
 });
 
-void test('翻轉模式以最近一次翻轉後陣營著色，未翻轉里使用灰色', () => {
-  const blueLatest = {
-    median_score: -10,
-    green_median_share: 45,
-    blue_median_share: 55,
-    classification: '藍營優勢區',
+void test('回到原本陣營不會反向著色，未翻轉里與中立里使用灰色', () => {
+  const greenBaseline = {
+    median_score: 10,
+    green_median_share: 55,
+    blue_median_share: 45,
+    classification: '綠營優勢區',
     mapping_status: 'matched',
     score_1994: 12,
-    score_2022: -14,
+    score_2002: -14,
+    score_2014: 18,
   };
-  const neverFlipped = { ...blueLatest, score_1994: -8 };
-  assert.equal(featureFillPresentation(blueLatest, 'flip').fillColor, FLIP_BLUE_COLOR);
+  const neverFlipped = { ...greenBaseline, score_2002: 14 };
+  const neutral = { ...greenBaseline, classification: '中立區' };
+  assert.deepEqual(flipHistory(greenBaseline).map((flip) => flip.label), ['2002 綠翻藍']);
+  assert.equal(featureFillPresentation(greenBaseline, 'flip').fillColor, FLIP_BLUE_COLOR);
   assert.equal(featureFillPresentation(neverFlipped, 'flip').fillColor, FLIP_NONE_COLOR);
+  assert.equal(featureFillPresentation(neutral, 'flip').fillColor, FLIP_NONE_COLOR);
 });
 
 void test('待確認里在四種模式使用完全相同的斜線紋理', () => {
