@@ -173,7 +173,7 @@ export function MapWorkspace() {
   const [loadLabel, setLoadLabel] = useState('準備載入地圖資料…');
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [isDetailCollapsed, setIsDetailCollapsed] = useState(false);
-  const [mobilePicker, setMobilePicker] = useState<'district' | 'village' | null>(null);
+  const [mobilePicker, setMobilePicker] = useState<'district' | 'village' | 'flipYear' | null>(null);
   const [selection, dispatch] = useReducer(selectionReducer, INITIAL_SELECTION);
   const [flipYear, setFlipYear] = useState<FlipYear>('all');
   const selectedDistrict = selection.district;
@@ -235,8 +235,16 @@ export function MapWorkspace() {
     ...Array.from(new Set(directory.map((row) => row.district))).filter(Boolean).sort((a, b) => a.localeCompare(b, 'zh-Hant')),
   ], [directory]);
   const villages = useMemo(() => villageOptions(directory, selection.district), [directory, selection.district]);
-  const mobilePickerOptions = mobilePicker === 'district' ? districts : [ALL_VILLAGES, ...villages];
-  const mobilePickerValue = mobilePicker === 'district' ? selection.district : selection.village;
+  const mobilePickerOptions: Array<string | number> = mobilePicker === 'district'
+    ? districts
+    : mobilePicker === 'village'
+      ? [ALL_VILLAGES, ...villages]
+      : ['all', ...ELECTION_YEARS];
+  const mobilePickerValue: string | number = mobilePicker === 'district'
+    ? selection.district
+    : mobilePicker === 'village'
+      ? selection.village
+      : flipYear;
 
   const startPickerDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
@@ -560,10 +568,19 @@ export function MapWorkspace() {
             </div>
             {selection.mode === 'flip' && <div className="flip-year-switch" aria-label="翻轉年份">
               <span>翻轉年份</span>
-              <div className="flip-year-options">
+              <div className="flip-year-options desktop-flip-years">
                 <button type="button" aria-pressed={flipYear === 'all'} onClick={() => setFlipYear('all')}>全部</button>
                 {ELECTION_YEARS.map((year) => <button key={year} type="button" aria-pressed={flipYear === year} onClick={() => setFlipYear(year)}>{year}</button>)}
               </div>
+              <button
+                className="mobile-sheet-trigger mobile-flip-year-trigger"
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded={mobilePicker === 'flipYear'}
+                onClick={() => setMobilePicker('flipYear')}
+              >
+                <span>{flipYear === 'all' ? '全部年份' : `${flipYear} 年`}</span><ChevronDown size={18} aria-hidden="true" />
+              </button>
             </div>}
           </fieldset>
           {blocker && <Alert className="map-alert"><AlertTriangle /><AlertTitle>地圖資料暫時無法載入</AlertTitle><AlertDescription><p>{blocker}</p>{loadError && <button className="map-retry-button" type="button" disabled={isLoading} onClick={() => setLoadAttempt((attempt) => attempt + 1)}>{isLoading ? '重新載入中…' : '重新載入地圖'}</button>}</AlertDescription></Alert>}
@@ -620,13 +637,13 @@ export function MapWorkspace() {
         <section className="mobile-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="mobile-picker-title">
           <div className="mobile-picker-handle" aria-hidden="true" />
           <header>
-            <h2 id="mobile-picker-title">選擇{mobilePicker === 'district' ? '行政區' : '里別'}</h2>
+            <h2 id="mobile-picker-title">選擇{mobilePicker === 'district' ? '行政區' : mobilePicker === 'village' ? '里別' : '翻轉年份'}</h2>
             <button type="button" aria-label="關閉選單" onClick={() => setMobilePicker(null)}><X size={21} aria-hidden="true" /></button>
           </header>
           <div
             className="mobile-picker-options"
             role="listbox"
-            aria-label={mobilePicker === 'district' ? '行政區' : '里別'}
+            aria-label={mobilePicker === 'district' ? '行政區' : mobilePicker === 'village' ? '里別' : '翻轉年份'}
             onPointerDown={startPickerDrag}
             onPointerMove={movePickerDrag}
             onPointerUp={finishPickerDrag}
@@ -640,18 +657,20 @@ export function MapWorkspace() {
           >
             {mobilePickerOptions.map((name) => {
               const isSelected = name === mobilePickerValue;
+              const label = mobilePicker === 'flipYear' ? name === 'all' ? '全部年份' : `${name} 年` : name;
               return <button
-                key={name}
+                key={String(name)}
                 type="button"
                 role="option"
                 aria-selected={isSelected}
                 onClick={() => {
-                  if (mobilePicker === 'district') dispatch({ type: 'select-district', district: name });
-                  else dispatch({ type: 'select-village', village: name });
+                  if (mobilePicker === 'district') dispatch({ type: 'select-district', district: name as string });
+                  else if (mobilePicker === 'village') dispatch({ type: 'select-village', village: name as string });
+                  else setFlipYear(name as FlipYear);
                   setMobilePicker(null);
                 }}
               >
-                <span>{name}</span>{isSelected && <Check size={20} aria-hidden="true" />}
+                <span>{label}</span>{isSelected && <Check size={20} aria-hidden="true" />}
               </button>;
             })}
           </div>

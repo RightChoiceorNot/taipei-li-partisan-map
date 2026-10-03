@@ -94,6 +94,7 @@ button, input, select { font: inherit; }
 .flip-year-options button { min-width: 39px; min-height: 28px; flex: 0 0 auto; padding: 4px 7px; color: #566972; background: transparent; border: 0; border-radius: 7px; cursor: pointer; font-size: .67rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .flip-year-options button:hover { background: #edf2f1; }
 .flip-year-options button[aria-pressed='true'] { color: #fff; background: #387b87; }
+.mobile-flip-year-trigger { display: none; }
 .panel-section h2 { margin: 0 0 13px; font-family: var(--font-sans-tc); font-size: 1rem; }
 .legend-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; font-size: .84rem; }
 .legend-list li { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 9px; }
@@ -396,7 +397,8 @@ button, input, select { font: inherit; }
   }
   .mode-switch button { padding: 6px 5px; font-size: .7rem; white-space: normal; }
   .flip-year-switch { grid-template-columns: 56px minmax(0, 1fr); padding-inline: 3px; }
-  .flip-year-options { padding-bottom: 2px; }
+  .desktop-flip-years { display: none; }
+  .mobile-flip-year-trigger { display: flex; height: 40px; border-radius: 9px; font-size: .72rem; font-weight: 700; }
   .detail-panel.is-collapsed .detail-toggle { font-size: .7rem; }
   .map-alert {
     position: relative;
