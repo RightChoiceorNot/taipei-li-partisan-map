@@ -162,6 +162,16 @@ export function MapWorkspace() {
   const districtLabelsRef = useRef<LayerGroup | null>(null);
   const loadRequestRef = useRef(0);
   const pickerDragRef = useRef({ pointerId: -1, startY: 0, startScrollTop: 0, moved: false });
+  const mobileMapPanRef = useRef({
+    timer: null as number | null,
+    active: false,
+    moved: false,
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    lastY: 0,
+    suppressClickUntil: 0,
+  });
   const [mapReady, setMapReady] = useState(false);
   const [data, setData] = useState<LiCollection | null>(null);
   const [districtData, setDistrictData] = useState<DistrictCollection | null>(null);
@@ -306,9 +316,12 @@ export function MapWorkspace() {
     let cancelled = false;
     void import('leaflet').then((L) => {
       if (cancelled || !mapNode.current) return;
+      const usesMobileGestures = window.matchMedia('(max-width: 720px)').matches;
       const map = L.map(mapNode.current, {
         center: [25.055, 121.55], zoom: 12, minZoom: 10, maxZoom: 17,
         zoomSnap: 0.25, zoomDelta: 0.25,
+        dragging: !usesMobileGestures,
+        touchZoom: true,
         zoomControl: false, attributionControl: false,
       });
       for (const [name, zIndex] of [['villagePane', 410], ['districtHaloPane', 430], ['districtLinePane', 440], ['districtLabelPane', 450]] as const) {
@@ -326,6 +339,85 @@ export function MapWorkspace() {
       mapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const node = mapNode.current;
+    const map = mapRef.current;
+    if (!mapReady || !node || !map || !window.matchMedia('(max-width: 720px)').matches) return;
+
+    const gesture = mobileMapPanRef.current;
+    const clearLongPress = () => {
+      if (gesture.timer !== null) window.clearTimeout(gesture.timer);
+      gesture.timer = null;
+    };
+    const finishGesture = () => {
+      clearLongPress();
+      if (gesture.active && gesture.moved) gesture.suppressClickUntil = Date.now() + 450;
+      gesture.active = false;
+      gesture.moved = false;
+      node.classList.remove('is-long-press-panning');
+    };
+    const onTouchStart = (event: TouchEvent) => {
+      clearLongPress();
+      if (event.touches.length !== 1) {
+        finishGesture();
+        return;
+      }
+      const touch = event.touches[0];
+      gesture.active = false;
+      gesture.moved = false;
+      gesture.startX = touch.clientX;
+      gesture.startY = touch.clientY;
+      gesture.lastX = touch.clientX;
+      gesture.lastY = touch.clientY;
+      gesture.timer = window.setTimeout(() => {
+        gesture.timer = null;
+        gesture.active = true;
+        node.classList.add('is-long-press-panning');
+      }, 400);
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length !== 1) {
+        finishGesture();
+        return;
+      }
+      const touch = event.touches[0];
+      const distance = Math.hypot(touch.clientX - gesture.startX, touch.clientY - gesture.startY);
+      if (!gesture.active) {
+        if (distance > 8) clearLongPress();
+        return;
+      }
+
+      event.preventDefault();
+      const deltaX = gesture.lastX - touch.clientX;
+      const deltaY = gesture.lastY - touch.clientY;
+      if (Math.abs(deltaX) + Math.abs(deltaY) > 0) {
+        map.panBy([deltaX, deltaY], { animate: false });
+        if (distance > 4) gesture.moved = true;
+      }
+      gesture.lastX = touch.clientX;
+      gesture.lastY = touch.clientY;
+    };
+    const suppressPanClick = (event: MouseEvent) => {
+      if (Date.now() >= gesture.suppressClickUntil) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+
+    node.addEventListener('touchstart', onTouchStart, { passive: true });
+    node.addEventListener('touchmove', onTouchMove, { passive: false });
+    node.addEventListener('touchend', finishGesture, { passive: true });
+    node.addEventListener('touchcancel', finishGesture, { passive: true });
+    node.addEventListener('click', suppressPanClick, true);
+    return () => {
+      finishGesture();
+      node.removeEventListener('touchstart', onTouchStart);
+      node.removeEventListener('touchmove', onTouchMove);
+      node.removeEventListener('touchend', finishGesture);
+      node.removeEventListener('touchcancel', finishGesture);
+      node.removeEventListener('click', suppressPanClick, true);
+    };
+  }, [mapReady]);
 
   useEffect(() => {
     const node = mapNode.current;
@@ -537,6 +629,7 @@ export function MapWorkspace() {
 
         <div className="map-stage" aria-busy={isLoading}>
           <div ref={mapNode} className="map-canvas" aria-label="臺北市里別藍綠相對支持度地圖" />
+          <div className="mobile-map-gesture-hint" aria-hidden="true">滑動頁面 · 長按移動地圖 · 雙指縮放</div>
           {isLoading && !loadError && <div className="map-loading" role="status" aria-live="polite">
             <div className="map-loading-card">
               <div className="map-loading-mark"><MapPinned size={24} aria-hidden="true" /></div>
