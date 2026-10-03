@@ -2,7 +2,7 @@ export const ALL_DISTRICTS = '全部行政區';
 export const ALL_VILLAGES = '全部里';
 export const VILLAGE_PROMPT = '請先選擇行政區';
 
-export type MapMode = 'partisan' | 'green-rate' | 'blue-rate';
+export type MapMode = 'partisan' | 'green-rate' | 'blue-rate' | 'flip';
 
 export type MapSelection = {
   district: string;
@@ -34,6 +34,22 @@ export type MapMetricProperties = {
   blue_median_share: number | null;
   classification: string;
   mapping_status: string;
+  score_1994?: number | null;
+  score_1998?: number | null;
+  score_2002?: number | null;
+  score_2006?: number | null;
+  score_2010?: number | null;
+  score_2014?: number | null;
+  score_2022?: number | null;
+};
+
+export type FlipCamp = 'green' | 'blue';
+export type FlipEvent = {
+  fromYear: number;
+  year: number;
+  from: FlipCamp;
+  to: FlipCamp;
+  label: string;
 };
 
 export const SHARE_TICKS = [35, 40, 45, 50, 55, 60, 65] as const;
@@ -42,6 +58,10 @@ export const BLUE_SHARE_COLORS = ['#eff6fb', '#d9eaf5', '#b7d5e9', '#83b5d7', '#
 export const PARTISAN_NEUTRAL_COLOR = '#d3d5d4';
 export const PARTISAN_BLUE_COLORS = ['#d1e0ed', '#9eb9d5', '#638bb6', '#345f91', '#12385f'] as const;
 export const PARTISAN_GREEN_COLORS = ['#cfe5da', '#99c7b3', '#5c9f85', '#2f745c', '#0d4937'] as const;
+export const FLIP_GREEN_COLOR = '#2f745c';
+export const FLIP_BLUE_COLOR = '#345f91';
+export const FLIP_NONE_COLOR = '#d5d9d8';
+export const ELECTION_YEARS = [1994, 1998, 2002, 2006, 2010, 2014, 2022] as const;
 export const PARTISAN_LEGEND_SCORES = [
   -45, -35, -25, -15, -7.5,
   0,
@@ -149,12 +169,37 @@ export function partisanScaleColor(value: number) {
   return colors[bucket];
 }
 
+function advantageCamp(score: number | null | undefined): FlipCamp | null {
+  if (!Number.isFinite(score) || Math.abs(score!) <= 5) return null;
+  return score! > 0 ? 'green' : 'blue';
+}
+
+export function flipHistory(properties: MapMetricProperties): FlipEvent[] {
+  const flips: FlipEvent[] = [];
+  let previous: { year: number; camp: FlipCamp } | null = null;
+  for (const year of ELECTION_YEARS) {
+    const camp = advantageCamp(properties[`score_${year}` as keyof MapMetricProperties] as number | null | undefined);
+    if (!camp) continue;
+    if (previous && previous.camp !== camp) {
+      const direction = previous.camp === 'blue' ? '藍翻綠' : '綠翻藍';
+      flips.push({ fromYear: previous.year, year, from: previous.camp, to: camp, label: `${previous.year}→${year} ${direction}` });
+    }
+    previous = { year, camp };
+  }
+  return flips;
+}
+
 export function featureFillPresentation(properties: MapMetricProperties | undefined, mode: MapMode) {
   const reliable = properties?.mapping_status === 'matched'
     && Number.isFinite(properties.median_score)
     && Number.isFinite(properties.green_median_share)
     && Number.isFinite(properties.blue_median_share);
   if (!reliable || !properties) return PENDING_PRESENTATION;
+  if (mode === 'flip') {
+    const latestFlip = flipHistory(properties).at(-1);
+    if (!latestFlip) return { fillColor: FLIP_NONE_COLOR, className: '' };
+    return { fillColor: latestFlip.to === 'green' ? FLIP_GREEN_COLOR : FLIP_BLUE_COLOR, className: '' };
+  }
   if (mode === 'green-rate') return { fillColor: shareScaleColor(properties.green_median_share!, mode), className: '' };
   if (mode === 'blue-rate') return { fillColor: shareScaleColor(properties.blue_median_share!, mode), className: '' };
   return { fillColor: partisanScaleColor(properties.median_score!), className: '' };

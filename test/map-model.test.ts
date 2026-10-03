@@ -6,6 +6,10 @@ import {
   districtSummary,
   featureEmphasis,
   featureFillPresentation,
+  FLIP_BLUE_COLOR,
+  FLIP_GREEN_COLOR,
+  FLIP_NONE_COLOR,
+  flipHistory,
   focusTarget,
   INITIAL_SELECTION,
   PARTISAN_BLUE_COLORS,
@@ -79,11 +83,11 @@ void test('手機僅替目前選取里建立資料卡，避免關閉後跳到其
   assert.equal(shouldBindFeatureTooltip({ district: '士林區', li_name_2022: '平等里' }, state, false), true);
 });
 
-void test('切換三種地圖模式保留行政區與里別狀態', () => {
+void test('切換四種地圖模式保留行政區與里別狀態', () => {
   let state = selectionReducer(INITIAL_SELECTION, { type: 'select-feature', district: '松山區', village: '莊敬里' });
   const focusKey = selectionFocusKey(state);
   const viewport = { center: [25.05, 121.55], zoom: 15 };
-  for (const mode of ['partisan', 'green-rate', 'blue-rate'] as const) {
+  for (const mode of ['partisan', 'green-rate', 'blue-rate', 'flip'] as const) {
     state = selectionReducer(state, { type: 'set-mode', mode });
     assert.equal(state.district, '松山區');
     assert.equal(state.village, '莊敬里');
@@ -93,7 +97,45 @@ void test('切換三種地圖模式保留行政區與里別狀態', () => {
   }
 });
 
-void test('待確認里在三種模式使用完全相同的斜線紋理', () => {
+void test('翻轉模式略過中立年份並記錄每次跨陣營翻轉', () => {
+  const row = {
+    median_score: 8,
+    green_median_share: 54,
+    blue_median_share: 46,
+    classification: '綠營優勢區',
+    mapping_status: 'matched',
+    score_1994: -12,
+    score_1998: -4,
+    score_2002: 14,
+    score_2006: 3,
+    score_2010: -18,
+    score_2014: -2,
+    score_2022: 9,
+  };
+  assert.deepEqual(flipHistory(row).map((flip) => flip.label), [
+    '1994→2002 藍翻綠',
+    '2002→2010 綠翻藍',
+    '2010→2022 藍翻綠',
+  ]);
+  assert.equal(featureFillPresentation(row, 'flip').fillColor, FLIP_GREEN_COLOR);
+});
+
+void test('翻轉模式以最近一次翻轉後陣營著色，未翻轉里使用灰色', () => {
+  const blueLatest = {
+    median_score: -10,
+    green_median_share: 45,
+    blue_median_share: 55,
+    classification: '藍營優勢區',
+    mapping_status: 'matched',
+    score_1994: 12,
+    score_2022: -14,
+  };
+  const neverFlipped = { ...blueLatest, score_1994: -8 };
+  assert.equal(featureFillPresentation(blueLatest, 'flip').fillColor, FLIP_BLUE_COLOR);
+  assert.equal(featureFillPresentation(neverFlipped, 'flip').fillColor, FLIP_NONE_COLOR);
+});
+
+void test('待確認里在四種模式使用完全相同的斜線紋理', () => {
   const pending = {
     median_score: null,
     green_median_share: null,
@@ -101,9 +143,10 @@ void test('待確認里在三種模式使用完全相同的斜線紋理', () => 
     classification: '待確認',
     mapping_status: 'missing-seven-year-score',
   };
-  const presentations = (['partisan', 'green-rate', 'blue-rate'] as const).map((mode) => featureFillPresentation(pending, mode));
+  const presentations = (['partisan', 'green-rate', 'blue-rate', 'flip'] as const).map((mode) => featureFillPresentation(pending, mode));
   assert.deepEqual(presentations[0], presentations[1]);
   assert.deepEqual(presentations[1], presentations[2]);
+  assert.deepEqual(presentations[2], presentations[3]);
   assert.equal(presentations[0].className, 'pending-li');
 });
 

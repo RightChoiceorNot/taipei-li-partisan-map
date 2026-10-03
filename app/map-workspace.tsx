@@ -10,8 +10,13 @@ import {
   ALL_DISTRICTS,
   ALL_VILLAGES,
   districtSummary,
+  ELECTION_YEARS,
   featureEmphasis,
   featureFillPresentation,
+  FLIP_BLUE_COLOR,
+  FLIP_GREEN_COLOR,
+  FLIP_NONE_COLOR,
+  flipHistory,
   focusTarget,
   GREEN_SHARE_COLORS,
   INITIAL_SELECTION,
@@ -77,6 +82,7 @@ const MODES: { value: MapMode; label: string }[] = [
   { value: 'partisan', label: '藍綠優勢分布' },
   { value: 'green-rate', label: '綠營相對得票率' },
   { value: 'blue-rate', label: '藍營相對得票率' },
+  { value: 'flip', label: '藍綠翻轉里' },
 ];
 
 async function fetchJsonWithRetry<T>(url: string, label: string, retries = 2): Promise<T> {
@@ -105,12 +111,21 @@ function formatPercent(value: number | null | undefined) {
   return `${value.toFixed(1)}%`;
 }
 
-function tooltipContent(properties: LiProperties) {
+function tooltipContent(properties: LiProperties, mode: MapMode) {
   const yearScores = YEAR_RULES.map(([year]) => `<div><span>${year}</span><b>${formatScore(properties[`score_${year}` as keyof LiProperties] as number | null)}</b></div>`).join('');
   const coverage = properties.elections_count === 7
     ? '七屆完整中位數'
     : `${properties.elections_count} 屆可用資料中位數（${properties.years_included.replaceAll('|', '、')}）`;
-  return `<div class="li-tooltip"><button type="button" class="li-tooltip-close" aria-label="關閉里別詳細資料">&times;</button><p>${properties.district}</p><h3>${properties.li_name_2022}</h3><small class="tooltip-coverage">${coverage}</small><dl><dt>藍綠差距中位數</dt><dd>${formatScore(properties.median_score)}</dd><dt>綠營相對得票率中位數</dt><dd>${formatPercent(properties.green_median_share)}</dd><dt>藍營相對得票率中位數</dt><dd>${formatPercent(properties.blue_median_share)}</dd><dt>分類</dt><dd>${properties.classification}</dd></dl><div class="tooltip-years">${yearScores}</div>${properties.mapping_status !== 'matched' ? `<strong class="tooltip-warning">里界對應警示：${properties.mapping_status}</strong>` : ''}</div>`;
+  const flips = flipHistory(properties);
+  const flipSummary = mode === 'flip'
+    ? `<div class="tooltip-flips"><b>翻轉紀錄</b>${flips.length ? flips.map((flip) => `<span>${flip.label}</span>`).join('') : '<span>七屆中未出現跨越 ±5 的陣營翻轉</span>'}</div>`
+    : '';
+  return `<div class="li-tooltip"><p>${properties.district}</p><h3>${properties.li_name_2022}</h3><small class="tooltip-coverage">${coverage}</small><dl><dt>藍綠差距中位數</dt><dd>${formatScore(properties.median_score)}</dd><dt>綠營相對得票率中位數</dt><dd>${formatPercent(properties.green_median_share)}</dd><dt>藍營相對得票率中位數</dt><dd>${formatPercent(properties.blue_median_share)}</dd><dt>分類</dt><dd>${properties.classification}</dd></dl>${flipSummary}<div class="tooltip-years">${yearScores}</div>${properties.mapping_status !== 'matched' ? `<strong class="tooltip-warning">里界對應警示：${properties.mapping_status}</strong>` : ''}</div>`;
+}
+
+function scoreBarWidth(value: number | null | undefined) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(100, Math.abs(value!) / 60 * 100);
 }
 
 function installPendingPattern(map: LeafletMap) {
@@ -313,31 +328,6 @@ export function MapWorkspace() {
   }, [mapReady]);
 
   useEffect(() => {
-    const node = mapNode.current;
-    if (!mapReady || !node) return;
-    const stopClosePointer = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target?.closest('.li-tooltip-close')) event.stopPropagation();
-    };
-    const closeVillageDetail = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target?.closest('.li-tooltip-close')) return;
-      event.preventDefault();
-      event.stopPropagation();
-      villageLayerRef.current?.closeTooltip();
-      dispatch({ type: 'select-village', village: ALL_VILLAGES });
-    };
-    node.addEventListener('pointerdown', stopClosePointer, true);
-    node.addEventListener('pointerup', stopClosePointer, true);
-    node.addEventListener('click', closeVillageDetail, true);
-    return () => {
-      node.removeEventListener('pointerdown', stopClosePointer, true);
-      node.removeEventListener('pointerup', stopClosePointer, true);
-      node.removeEventListener('click', closeVillageDetail, true);
-    };
-  }, [mapReady]);
-
-  useEffect(() => {
     if (!mapReady || !mapRef.current || !data) return;
     let disposed = false;
     void import('leaflet').then((L) => {
@@ -363,12 +353,11 @@ export function MapWorkspace() {
         },
         onEachFeature: (feature, featureLayer) => {
           const properties = (feature as LiFeature).properties;
-          if (shouldBindFeatureTooltip(properties, selection, useSelectedOnlyTooltip)) {
-            featureLayer.bindTooltip(tooltipContent(properties), {
+          if (!useSelectedOnlyTooltip && shouldBindFeatureTooltip(properties, selection, false)) {
+            featureLayer.bindTooltip(tooltipContent(properties, selection.mode), {
               direction: 'top',
               opacity: 0.97,
-              sticky: !useSelectedOnlyTooltip,
-              interactive: useSelectedOnlyTooltip,
+              sticky: true,
               className: 'li-data-tooltip',
             });
           }
@@ -462,6 +451,7 @@ export function MapWorkspace() {
   const scoreSummaryCount = data?.metadata?.score_summary_count ?? scoreRows.length;
   const sevenElectionCount = data?.metadata?.seven_election_count ?? scoreRows.filter((row) => row.elections_count === 7).length;
   const chosenDirectoryRow = directory.find((row) => row.district === selection.district && row.li_name_2022 === selection.village);
+  const selectedFlips = selected ? flipHistory(selected) : [];
 
   return (
     <main className="app-shell">
@@ -540,6 +530,20 @@ export function MapWorkspace() {
             </div>
           </div>}
           <div className="map-grid" aria-hidden="true" />
+          {selected && <section className="mobile-map-detail" aria-label={`${selected.district}${selected.li_name_2022}詳細資料`}>
+            <button
+              className="mobile-map-detail-close"
+              type="button"
+              aria-label="關閉里別詳細資料"
+              onClick={() => dispatch({ type: 'select-village', village: ALL_VILLAGES })}
+            ><X size={21} aria-hidden="true" /></button>
+            <p>{selected.district}</p>
+            <h2>{selected.li_name_2022}</h2>
+            <small>{selected.elections_count === 7 ? '七屆完整中位數' : `${selected.elections_count} 屆可用資料中位數`}</small>
+            <dl><dt>藍綠差距中位數</dt><dd>{formatScore(selected.median_score)}</dd><dt>綠營相對得票率中位數</dt><dd>{formatPercent(selected.green_median_share)}</dd><dt>藍營相對得票率中位數</dt><dd>{formatPercent(selected.blue_median_share)}</dd><dt>分類</dt><dd>{selected.classification}</dd></dl>
+            {selection.mode === 'flip' && <div className="mobile-map-flips"><b>翻轉紀錄</b>{selectedFlips.length ? selectedFlips.map((flip) => <span key={`${flip.fromYear}-${flip.year}`}>{flip.label}</span>) : <span>七屆中未出現跨越 ±5 的陣營翻轉</span>}</div>}
+            <div className="mobile-map-years">{ELECTION_YEARS.map((year) => <div key={year}><span>{year}</span><b>{formatScore(selected[`score_${year}` as keyof LiProperties] as number | null)}</b></div>)}</div>
+          </section>}
           <fieldset className="mode-fieldset map-toolbar">
             <legend>地圖模式</legend>
             <div className="mode-switch">
@@ -548,13 +552,18 @@ export function MapWorkspace() {
           </fieldset>
           {blocker && <Alert className="map-alert"><AlertTriangle /><AlertTitle>地圖資料暫時無法載入</AlertTitle><AlertDescription><p>{blocker}</p>{loadError && <button className="map-retry-button" type="button" disabled={isLoading} onClick={() => setLoadAttempt((attempt) => attempt + 1)}>{isLoading ? '重新載入中…' : '重新載入地圖'}</button>}</AlertDescription></Alert>}
           <section className="map-legend" aria-label="地圖圖例">
-            <h2>{selection.mode === 'partisan' ? '藍綠優勢分布' : selection.mode === 'green-rate' ? '綠營相對得票率' : '藍營相對得票率'}</h2>
+            <h2>{selection.mode === 'partisan' ? '藍綠優勢分布' : selection.mode === 'green-rate' ? '綠營相對得票率' : selection.mode === 'blue-rate' ? '藍營相對得票率' : '曾發生藍綠翻轉'}</h2>
             {selection.mode === 'partisan' ? <div className="partisan-legend">
               <div className="partisan-ramp" aria-label="藍綠差距五級色階">
                 {PARTISAN_LEGEND_SCORES.map((score) => <span key={score} style={{ background: partisanScaleColor(score) }} />)}
               </div>
               <div className="partisan-ticks"><span>≤−40</span><span>−20</span><span>中立</span><span>+20</span><span>≥+40</span></div>
               <div className="partisan-sides"><span>藍營領先</span><span>綠營領先</span></div>
+            </div> : selection.mode === 'flip' ? <div className="flip-legend">
+              <p>略過中立年份，顏色表示最近一次翻轉後的優勢陣營。</p>
+              <span><i style={{ background: FLIP_GREEN_COLOR }} />最近一次藍翻綠</span>
+              <span><i style={{ background: FLIP_BLUE_COLOR }} />最近一次綠翻藍</span>
+              <span><i style={{ background: FLIP_NONE_COLOR }} />未發生翻轉</span>
             </div> : <div className="rate-legend">
               <p className="legend-description">{selection.mode === 'green-rate' ? '綠營票數占藍綠兩方票數的可用屆次中位數。' : '藍營票數占藍綠兩方票數的可用屆次中位數。'}</p>
               <div className="rate-ramp" style={{ background: `linear-gradient(90deg, ${(selection.mode === 'green-rate' ? GREEN_SHARE_COLORS : BLUE_SHARE_COLORS).join(', ')})` }} />
@@ -577,14 +586,14 @@ export function MapWorkspace() {
               {selected ? <>
               <button className="back-to-list" type="button" onClick={() => dispatch({ type: 'select-village', village: ALL_VILLAGES })}>返回本區全部里</button>
               <div className="detail-heading"><p>{selected.district}</p><h2>{selected.li_name_2022}</h2><span style={{ color: CLASS_COLORS[selected.classification] }}>{selected.classification}</span></div>
-              <div className="median-card"><div><span>{selected.elections_count === 7 ? '七屆差距中位數' : `${selected.elections_count} 屆可用資料差距中位數`}</span><strong>{formatScore(selected.median_score)}</strong><small>百分點</small></div><dl><div><dt>綠營相對得票率中位數</dt><dd>{formatPercent(selected.green_median_share)}</dd></div><div><dt>藍營相對得票率中位數</dt><dd>{formatPercent(selected.blue_median_share)}</dd></div></dl></div>
+              <div className={`median-card ${selected.classification === '綠營優勢區' ? 'is-green' : selected.classification === '藍營優勢區' ? 'is-blue' : 'is-neutral'}`}><div><span>{selected.elections_count === 7 ? '七屆差距中位數' : `${selected.elections_count} 屆可用資料差距中位數`}</span><strong>{formatScore(selected.median_score)}</strong><small>百分點</small></div><dl><div><dt>綠營相對得票率中位數</dt><dd>{formatPercent(selected.green_median_share)}</dd></div><div><dt>藍營相對得票率中位數</dt><dd>{formatPercent(selected.blue_median_share)}</dd></div></dl></div>
+              {selection.mode === 'flip' && <section className="detail-flip-history"><h3>翻轉紀錄</h3>{selectedFlips.length ? selectedFlips.map((flip) => <p key={`${flip.fromYear}-${flip.year}`} className={flip.to === 'green' ? 'to-green' : 'to-blue'}>{flip.label}</p>) : <p className="no-flip">七屆中未出現跨越 ±5 的陣營翻轉。</p>}</section>}
               <div className="year-list">{YEAR_RULES.map(([year, rule]) => <div key={year}><span>{year}</span><strong>{formatScore(selected[`score_${year}` as keyof LiProperties] as number | null)}</strong><small>{rule}</small></div>)}</div>
               {selected.elections_count < 7 && <Alert className="coverage-warning"><Info /><AlertTitle>資料涵蓋 {selected.elections_count} 屆</AlertTitle><AlertDescription>此里在早期選舉沒有可直接對應的現行里別票數，只採用 {selected.years_included.replaceAll('|', '、')} 年實際得票計算；未將舊里票數拆分、複製或估算。</AlertDescription></Alert>}
               {selected.mapping_status !== 'matched' && <Alert className="mapping-warning"><AlertTriangle /><AlertTitle>里界對應需確認</AlertTitle><AlertDescription>{selected.mapping_status}</AlertDescription></Alert>}
             </> : chosenDirectoryRow ? <div className="empty-detail"><Info size={22} /><h2>{chosenDirectoryRow.li_name_2022}</h2><p>此里尚無完整七屆計分資料；選取與地圖高亮仍會保留。</p></div> : filteredScores.length ? <div className="score-browser">
               <div className="score-browser-heading"><Info size={20} /><div><h2>已計分里</h2><p>選擇行政區與里別可縮放、高亮並開啟資料卡。</p></div></div>
-              <div className="score-result-list">{filteredScores.slice(0, 40).map((row) => <button key={`${row.district}-${row.li_name_2022}`} type="button" onClick={() => dispatch({ type: 'select-feature', district: row.district, village: row.li_name_2022 })}><span>{row.district}</span><strong>{row.li_name_2022}</strong><em style={{ color: CLASS_COLORS[row.classification] }}>{formatScore(row.median_score)}</em></button>)}</div>
-              {filteredScores.length > 40 && <p className="result-note">目前顯示前 40 筆，請用行政區與里別縮小範圍。</p>}
+              <div className="score-result-list">{filteredScores.map((row) => <button key={`${row.district}-${row.li_name_2022}`} type="button" onClick={() => dispatch({ type: 'select-feature', district: row.district, village: row.li_name_2022 })}><span>{row.district}</span><strong>{row.li_name_2022}</strong><span className="score-bar" aria-hidden="true"><i style={{ width: `${scoreBarWidth(row.median_score)}%`, background: CLASS_COLORS[row.classification] }} /></span><em style={{ color: CLASS_COLORS[row.classification] }}>{formatScore(row.median_score)}</em></button>)}</div>
               </div> : <div className="empty-detail"><Info size={22} /><h2>沒有符合條件的里</h2><p>請改選行政區或里別。</p></div>}
             </div>
           </aside>
