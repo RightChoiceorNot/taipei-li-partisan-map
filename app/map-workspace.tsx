@@ -27,6 +27,7 @@ import {
   selectionReducer,
   shouldBindFeatureTooltip,
   SHARE_TICKS,
+  type FlipYear,
   type MapMode,
   type VillageDirectoryRow,
   VILLAGE_PROMPT,
@@ -112,12 +113,12 @@ function formatPercent(value: number | null | undefined) {
   return `${value.toFixed(1)}%`;
 }
 
-function tooltipContent(properties: LiProperties, mode: MapMode) {
+function tooltipContent(properties: LiProperties, mode: MapMode, flipYear: FlipYear) {
   const yearScores = YEAR_RULES.map(([year]) => `<div><span>${year}</span><b>${formatScore(properties[`score_${year}` as keyof LiProperties] as number | null)}</b></div>`).join('');
   const coverage = properties.elections_count === 7
     ? '七屆完整中位數'
     : `${properties.elections_count} 屆可用資料中位數（${properties.years_included.replaceAll('|', '、')}）`;
-  const flips = flipHistory(properties);
+  const flips = flipHistory(properties).filter((flip) => flipYear === 'all' || flip.year === flipYear);
   const flipSummary = mode === 'flip'
     ? `<div class="tooltip-flips"><b>翻盤年份</b>${flips.length ? flips.map((flip) => `<span>${flip.label}</span>`).join('') : '<span>未出現由原本優勢陣營翻盤的年份</span>'}</div>`
     : '';
@@ -174,6 +175,7 @@ export function MapWorkspace() {
   const [isDetailCollapsed, setIsDetailCollapsed] = useState(false);
   const [mobilePicker, setMobilePicker] = useState<'district' | 'village' | null>(null);
   const [selection, dispatch] = useReducer(selectionReducer, INITIAL_SELECTION);
+  const [flipYear, setFlipYear] = useState<FlipYear>('all');
   const selectedDistrict = selection.district;
   const selectedVillage = selection.village;
   const mapFocusKey = selectionFocusKey(selection);
@@ -268,8 +270,8 @@ export function MapWorkspace() {
     [scoreRows, selection.district],
   );
   const currentDistrictFlipSummary = useMemo(
-    () => districtFlipSummary(scoreRows, selection.district),
-    [scoreRows, selection.district],
+    () => districtFlipSummary(scoreRows, selection.district, flipYear),
+    [scoreRows, selection.district, flipYear],
   );
   const selected = useMemo(() => scoreRows.find((row) =>
     row.district === selection.district && row.li_name_2022 === selection.village,
@@ -345,7 +347,7 @@ export function MapWorkspace() {
         style: (feature) => {
           const properties = feature?.properties as LiProperties | undefined;
           const emphasis = properties ? featureEmphasis(properties, selection) : { fillOpacity: 0.84, lineWeight: 0.75, isVillage: false };
-          const presentation = featureFillPresentation(properties, selection.mode);
+          const presentation = featureFillPresentation(properties, selection.mode, flipYear);
           return {
             pane: 'villagePane',
             color: emphasis.isVillage ? '#f2a51a' : '#f8fafc',
@@ -359,7 +361,7 @@ export function MapWorkspace() {
         onEachFeature: (feature, featureLayer) => {
           const properties = (feature as LiFeature).properties;
           if (!useSelectedOnlyTooltip && shouldBindFeatureTooltip(properties, selection, false)) {
-            featureLayer.bindTooltip(tooltipContent(properties, selection.mode), {
+            featureLayer.bindTooltip(tooltipContent(properties, selection.mode, flipYear), {
               direction: 'top',
               opacity: 0.97,
               sticky: true,
@@ -385,7 +387,7 @@ export function MapWorkspace() {
       });
     });
     return () => { disposed = true; };
-  }, [data, mapReady, selection]);
+  }, [data, flipYear, mapReady, selection]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !districtData) return;
@@ -456,7 +458,9 @@ export function MapWorkspace() {
   const scoreSummaryCount = data?.metadata?.score_summary_count ?? scoreRows.length;
   const sevenElectionCount = data?.metadata?.seven_election_count ?? scoreRows.filter((row) => row.elections_count === 7).length;
   const chosenDirectoryRow = directory.find((row) => row.district === selection.district && row.li_name_2022 === selection.village);
-  const selectedFlips = selected ? flipHistory(selected) : [];
+  const selectedFlips = selected
+    ? flipHistory(selected).filter((flip) => flipYear === 'all' || flip.year === flipYear)
+    : [];
 
   return (
     <main className="app-shell">
@@ -554,10 +558,17 @@ export function MapWorkspace() {
             <div className="mode-switch">
               {MODES.map((mode) => <button key={mode.value} type="button" aria-pressed={selection.mode === mode.value} onClick={() => dispatch({ type: 'set-mode', mode: mode.value })}>{mode.label}</button>)}
             </div>
+            {selection.mode === 'flip' && <div className="flip-year-switch" aria-label="翻轉年份">
+              <span>翻轉年份</span>
+              <div className="flip-year-options">
+                <button type="button" aria-pressed={flipYear === 'all'} onClick={() => setFlipYear('all')}>全部</button>
+                {ELECTION_YEARS.map((year) => <button key={year} type="button" aria-pressed={flipYear === year} onClick={() => setFlipYear(year)}>{year}</button>)}
+              </div>
+            </div>}
           </fieldset>
           {blocker && <Alert className="map-alert"><AlertTriangle /><AlertTitle>地圖資料暫時無法載入</AlertTitle><AlertDescription><p>{blocker}</p>{loadError && <button className="map-retry-button" type="button" disabled={isLoading} onClick={() => setLoadAttempt((attempt) => attempt + 1)}>{isLoading ? '重新載入中…' : '重新載入地圖'}</button>}</AlertDescription></Alert>}
           <section className="map-legend" aria-label="地圖圖例">
-            <h2>{selection.mode === 'partisan' ? '藍綠優勢分布' : selection.mode === 'green-rate' ? '綠營相對得票率' : selection.mode === 'blue-rate' ? '藍營相對得票率' : '曾發生藍綠翻轉'}</h2>
+            <h2>{selection.mode === 'partisan' ? '藍綠優勢分布' : selection.mode === 'green-rate' ? '綠營相對得票率' : selection.mode === 'blue-rate' ? '藍營相對得票率' : flipYear === 'all' ? '曾發生藍綠翻轉' : `${flipYear} 年藍綠翻轉`}</h2>
             {selection.mode === 'partisan' ? <div className="partisan-legend">
               <div className="partisan-ramp" aria-label="藍綠差距五級色階">
                 {PARTISAN_LEGEND_SCORES.map((score) => <span key={score} style={{ background: partisanScaleColor(score) }} />)}
@@ -565,7 +576,7 @@ export function MapWorkspace() {
               <div className="partisan-ticks"><span>≤−40</span><span>−20</span><span>中立</span><span>+20</span><span>≥+40</span></div>
               <div className="partisan-sides"><span>藍營領先</span><span>綠營領先</span></div>
             </div> : selection.mode === 'flip' ? <div className="flip-legend">
-              <p>以中位數分類為原本陣營；任一屆由對手勝出即標示。</p>
+              <p>{flipYear === 'all' ? '以中位數分類為原本陣營；任一屆由對手勝出即標示。' : `只顯示 ${flipYear} 年由原本優勢陣營被對手勝出的里。`}</p>
               <span><i style={{ background: FLIP_GREEN_COLOR }} />藍營優勢里曾翻綠</span>
               <span><i style={{ background: FLIP_BLUE_COLOR }} />綠營優勢里曾翻藍</span>
               <span><i style={{ background: FLIP_NONE_COLOR }} />未翻盤或中立</span>

@@ -53,6 +53,9 @@ void test('翻轉模式依全市或行政區統計藍轉綠與綠轉藍里數', 
   assert.deepEqual(districtFlipSummary(rows, ALL_DISTRICTS), { blueToGreen: 1, greenToBlue: 1 });
   assert.deepEqual(districtFlipSummary(rows, '甲區'), { blueToGreen: 1, greenToBlue: 1 });
   assert.deepEqual(districtFlipSummary(rows, '乙區'), { blueToGreen: 0, greenToBlue: 0 });
+  assert.deepEqual(districtFlipSummary(rows, ALL_DISTRICTS, 2014), { blueToGreen: 1, greenToBlue: 0 });
+  assert.deepEqual(districtFlipSummary(rows, ALL_DISTRICTS, 2002), { blueToGreen: 0, greenToBlue: 1 });
+  assert.deepEqual(districtFlipSummary(rows, ALL_DISTRICTS, 2022), { blueToGreen: 0, greenToBlue: 0 });
 });
 
 void test('選定行政區後，里別清單只包含該區並依官方代碼排序', () => {
@@ -131,6 +134,8 @@ void test('翻轉模式以長期分類為原本陣營並標出對手勝出的年
     '2022 藍翻綠',
   ]);
   assert.equal(featureFillPresentation(row, 'flip').fillColor, FLIP_GREEN_COLOR);
+  assert.equal(featureFillPresentation(row, 'flip', 2002).fillColor, FLIP_GREEN_COLOR);
+  assert.equal(featureFillPresentation(row, 'flip', 2014).fillColor, FLIP_NONE_COLOR);
 });
 
 void test('回到原本陣營不會反向著色，未翻轉里與中立里使用灰色', () => {

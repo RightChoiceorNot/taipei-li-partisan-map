@@ -44,6 +44,8 @@ export type MapMetricProperties = {
 };
 
 export type FlipCamp = 'green' | 'blue';
+export type ElectionYear = 1994 | 1998 | 2002 | 2006 | 2010 | 2014 | 2022;
+export type FlipYear = 'all' | ElectionYear;
 export type FlipEvent = {
   year: number;
   from: FlipCamp;
@@ -60,7 +62,7 @@ export const PARTISAN_GREEN_COLORS = ['#cfe5da', '#99c7b3', '#5c9f85', '#2f745c'
 export const FLIP_GREEN_COLOR = '#2f745c';
 export const FLIP_BLUE_COLOR = '#345f91';
 export const FLIP_NONE_COLOR = '#d5d9d8';
-export const ELECTION_YEARS = [1994, 1998, 2002, 2006, 2010, 2014, 2022] as const;
+export const ELECTION_YEARS: readonly ElectionYear[] = [1994, 1998, 2002, 2006, 2010, 2014, 2022];
 export const PARTISAN_LEGEND_SCORES = [
   -45, -35, -25, -15, -7.5,
   0,
@@ -121,15 +123,15 @@ export function districtSummary(rows: DistrictSummaryRow[], district: string) {
   };
 }
 
-export function districtFlipSummary(rows: Array<DistrictSummaryRow & MapMetricProperties>, district: string) {
+export function districtFlipSummary(rows: Array<DistrictSummaryRow & MapMetricProperties>, district: string, year: FlipYear = 'all') {
   const scopedRows = district === ALL_DISTRICTS
     ? rows
     : rows.filter((row) => row.district === district);
   return {
     blueToGreen: scopedRows.filter((row) => row.classification === '藍營優勢區'
-      && flipHistory(row).some((flip) => flip.to === 'green')).length,
+      && flipHistory(row).some((flip) => flip.to === 'green' && (year === 'all' || flip.year === year))).length,
     greenToBlue: scopedRows.filter((row) => row.classification === '綠營優勢區'
-      && flipHistory(row).some((flip) => flip.to === 'blue')).length,
+      && flipHistory(row).some((flip) => flip.to === 'blue' && (year === 'all' || flip.year === year))).length,
   };
 }
 
@@ -202,14 +204,14 @@ export function flipHistory(properties: MapMetricProperties): FlipEvent[] {
   return flips;
 }
 
-export function featureFillPresentation(properties: MapMetricProperties | undefined, mode: MapMode) {
+export function featureFillPresentation(properties: MapMetricProperties | undefined, mode: MapMode, flipYear: FlipYear = 'all') {
   const reliable = properties?.mapping_status === 'matched'
     && Number.isFinite(properties.median_score)
     && Number.isFinite(properties.green_median_share)
     && Number.isFinite(properties.blue_median_share);
   if (!reliable || !properties) return PENDING_PRESENTATION;
   if (mode === 'flip') {
-    const flip = flipHistory(properties)[0];
+    const flip = flipHistory(properties).find((event) => flipYear === 'all' || event.year === flipYear);
     if (!flip) return { fillColor: FLIP_NONE_COLOR, className: '' };
     return { fillColor: flip.to === 'green' ? FLIP_GREEN_COLOR : FLIP_BLUE_COLOR, className: '' };
   }
