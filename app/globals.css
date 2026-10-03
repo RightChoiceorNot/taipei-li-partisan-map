@@ -88,8 +88,8 @@ button, input, select { font: inherit; }
 .mode-switch button { min-height: 38px; padding: 7px 14px; color: #53656e; background: transparent; border: 0; border-radius: 9px; cursor: pointer; font-size: .82rem; font-weight: 700; white-space: nowrap; }
 .mode-switch button:hover { color: #173a52; background: #edf2f1; }
 .mode-switch button[aria-pressed='true'] { color: #fff; background: #173a52; box-shadow: 0 5px 13px #173a522b; }
-.flip-year-switch { display: block; margin-top: 4px; padding: 7px 0 3px; border-top: 1px solid #dce3e4; }
-.flip-year-switch > span { display: block; margin: 0 5px 5px; color: #52656e; font-size: .68rem; font-weight: 700; white-space: nowrap; }
+.flip-year-switch { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7px; align-items: center; margin-top: 4px; padding: 6px 5px 2px; border-top: 1px solid #dce3e4; }
+.flip-year-switch > span { display: block; margin: 0; color: #52656e; font-size: .68rem; font-weight: 700; white-space: nowrap; }
 .flip-year-options { display: flex; gap: 3px; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
 .flip-year-options button { min-width: 39px; min-height: 28px; flex: 0 0 auto; padding: 4px 7px; color: #566972; background: transparent; border: 0; border-radius: 7px; cursor: pointer; font-size: .67rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .flip-year-options button:hover { background: #edf2f1; }
