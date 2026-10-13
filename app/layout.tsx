@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 const sans = Noto_Sans_TC({ variable: '--font-sans-tc', subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
 export const metadata: Metadata = {
-  title: '臺北市各里藍綠相對支持度地圖',
+  title: '台北市各里藍綠支持度地圖',
   description: '以七屆臺北市長選舉里別得票差距中位數呈現的本機互動地圖。',
 };
 

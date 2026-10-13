@@ -584,7 +584,7 @@ export function MapWorkspace() {
     <main className="app-shell">
       <header className="topbar">
         <div className="brand-mark" aria-hidden="true"><MapPinned size={20} /></div>
-        <div><p className="eyebrow">公民資料工具 · 臺北市</p><h1>各里藍綠相對支持度地圖</h1></div>
+        <div><h1>台北市各里藍綠支持度地圖</h1></div>
         <div className="data-status" aria-label="資料狀態"><span className="status-dot" />{scoreSummaryCount ? `${scoreSummaryCount} 里皆有資料 · ${sevenElectionCount} 里七屆完整` : '來源驗證中'}</div>
       </header>
 
