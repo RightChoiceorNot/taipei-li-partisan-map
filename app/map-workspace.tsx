@@ -156,6 +156,7 @@ function installPendingPattern(map: LeafletMap) {
 
 export function MapWorkspace() {
   const mapNode = useRef<HTMLDivElement>(null);
+  const mobileDetailRef = useRef<HTMLElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const villageLayerRef = useRef<LeafletGeoJSON | null>(null);
   const districtLayersRef = useRef<Layer[]>([]);
@@ -482,9 +483,6 @@ export function MapWorkspace() {
       villageLayerRef.current = layer;
       setLoadProgress((progress) => Math.max(progress, 84));
       setLoadLabel('繪製行政區邊界…');
-      layer.eachLayer((child: Layer & { feature?: LiFeature; openTooltip?: () => void }) => {
-        if (child.feature?.properties.district === selection.district && child.feature.properties.li_name_2022 === selection.village) child.openTooltip?.();
-      });
     });
     return () => { disposed = true; };
   }, [data, flipYear, mapReady, selection]);
@@ -549,7 +547,27 @@ export function MapWorkspace() {
         return target.scope === 'district' || feature.properties.li_name_2022 === target.village;
       });
       const bounds = L.geoJSON({ type: 'FeatureCollection', features } as FeatureCollection).getBounds();
-      if (bounds.isValid()) map.fitBounds(bounds, { padding: target.scope === 'village' ? [70, 70] : [28, 28], maxZoom: target.scope === 'village' ? 16 : 14 });
+      if (!bounds.isValid()) return;
+      if (target.scope !== 'village') {
+        map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14 });
+        return;
+      }
+
+      const isMobile = window.matchMedia('(max-width: 720px)').matches;
+      if (isMobile) {
+        const detailHeight = Math.min(mobileDetailRef.current?.offsetHeight ?? 230, Math.max(190, map.getSize().y * 0.5));
+        map.fitBounds(bounds, {
+          paddingTopLeft: [24, 24],
+          paddingBottomRight: [24, detailHeight + 34],
+          maxZoom: 16,
+        });
+      } else {
+        map.fitBounds(bounds, {
+          paddingTopLeft: [70, 90],
+          paddingBottomRight: [isDetailCollapsed ? 176 : 370, 70],
+          maxZoom: 16,
+        });
+      }
     });
     return () => { disposed = true; };
   }, [data, mapReady, mapFocusKey, selectedDistrict, selectedVillage]);
@@ -629,7 +647,7 @@ export function MapWorkspace() {
 
         <div className="map-stage" aria-busy={isLoading}>
           <div ref={mapNode} className="map-canvas" aria-label="臺北市里別藍綠相對支持度地圖" />
-          <div className="mobile-map-gesture-hint" aria-hidden="true">滑動頁面 · 長按移動地圖 · 雙指縮放</div>
+          <div className={`mobile-map-gesture-hint ${selected ? 'is-hidden' : ''}`} aria-hidden="true">滑動頁面 · 長按移動地圖 · 雙指縮放</div>
           {isLoading && !loadError && <div className="map-loading" role="status" aria-live="polite">
             <div className="map-loading-card">
               <div className="map-loading-mark"><MapPinned size={24} aria-hidden="true" /></div>
@@ -640,7 +658,7 @@ export function MapWorkspace() {
             </div>
           </div>}
           <div className="map-grid" aria-hidden="true" />
-          {selected && <section className="mobile-map-detail" aria-label={`${selected.district}${selected.li_name_2022}詳細資料`}>
+          {selected && <section ref={mobileDetailRef} className="mobile-map-detail" aria-label={`${selected.district}${selected.li_name_2022}詳細資料`}>
             <button
               className="mobile-map-detail-close"
               type="button"
